@@ -9,7 +9,7 @@ import (
 	"github.com/agentflare-ai/go-xmldom"
 )
 
-const NamespaceURI = "https://xsd.agentml.dev/agentml"
+const NamespaceURI = "github.com/agentflare-ai/agentml"
 
 // Data represents a data element defined in the SCXML document.
 type Data struct {
