@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml/stdin"
+    xmlns:stdin="github.com/agentflare-ai/agentml/stdin"
+    xmlns:agentml="github.com/agentflare-ai/agentml"
+    elementFormDefault="qualified">
+
+    <xs:import namespace="github.com/agentflare-ai/agentml"
+        schemaLocation="https://xsd.agentml.dev/agentml.xsd">
+        <xs:annotation>
+            <xs:documentation>Import AgentML schema to access invokable substitution group</xs:documentation>
+        </xs:annotation>
+    </xs:import>
+
+    <!-- Stdin read element - invokable that reads from stdin and sends events -->
+    <xs:element name="read" substitutionGroup="agentml:invokable">
+        <xs:complexType>
+            <xs:attribute name="event" type="xs:string" default="stdin.read" />
+            <xs:attribute name="prompt" type="xs:string" />
+            <xs:attribute name="promptexpr" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
