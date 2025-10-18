@@ -1,8 +1,14 @@
 # agentml-go
 
-> **Go implementations of AgentML namespace packages**
+> **🚧 Early Alpha - Building in Public**
+> 
+> agentml-go is in early alpha and being built openly with the community. The vision is ambitious, the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
+>
+> **📋 This Repository:** Contains Go implementations of AgentML namespace packages. These packages enable LLM integration, memory operations, I/O handling, and other capabilities for AgentML agents. For the language specification and runtime, see:
+> - **[agentml](https://github.com/agentflare-ai/agentml)** - AgentML language specification and documentation
+> - **[agentmlx](https://github.com/agentflare-ai/agentmlx)** - Reference runtime (Go/WASM) **NOT YET RELEASED**
 
-This repository contains the official Go implementations of standard [AgentML](https://github.com/agentflare-ai/agentml) namespaces. These packages enable LLM integration, memory operations, I/O handling, and other capabilities for AgentML agents.
+---
 
 ## 📦 Available Namespaces
 
