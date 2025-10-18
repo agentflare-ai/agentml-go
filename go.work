@@ -5,6 +5,7 @@ use (
 	./gemini
 	./memory
 	./ollama
+	./openai
 	./prompt
 	./stdin
 )

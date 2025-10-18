@@ -8,12 +8,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/agentflare-ai/agentml"
+	"github.com/agentflare-ai/agentml-go"
 	"github.com/agentflare-ai/go-xmldom"
 	"go.opentelemetry.io/otel"
 )
 
-const NamespaceURI = "https://xsd.agentml.dev/stdin"
+const NamespaceURI = "github.com/agentflare-ai/agentml-go/stdin"
 
 type Namespace struct {
 	itp    agentml.Interpreter
