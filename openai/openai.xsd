@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    targetNamespace="github.com/agentflare-ai/agentml/openai"
-    xmlns:openai="github.com/agentflare-ai/agentml/openai"
+    targetNamespace="github.com/agentflare-ai/agentml-go/openai"
+    xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
     xmlns:agentml="github.com/agentflare-ai/agentml"
     elementFormDefault="qualified">
 
@@ -15,21 +15,18 @@
     <!-- OpenAI generate element - executable that generates content using OpenAI-compatible APIs -->
     <xs:element name="generate" substitutionGroup="agentml:executable">
         <xs:annotation>
-            <xs:documentation>
-                Generate content using OpenAI or OpenAI-compatible LLM models.
-                This element integrates with any OpenAI-compatible API including OpenAI, Azure OpenAI,
-                local models via vLLM, LocalAI, Ollama (with OpenAI API), and other compatible providers.
-            </xs:documentation>
+            <xs:documentation> Generate content using OpenAI or OpenAI-compatible LLM models. This
+                element integrates with any OpenAI-compatible API including OpenAI, Azure OpenAI,
+                local models via vLLM, LocalAI, Ollama (with OpenAI API), and other compatible
+                providers. </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
                 <!-- Child prompt elements for template-based prompts -->
                 <xs:element name="prompt" minOccurs="0" maxOccurs="unbounded">
                     <xs:annotation>
-                        <xs:documentation>
-                            Child prompt element that supports Go template syntax.
-                            Content can include template expressions like {{.variableName}}.
-                        </xs:documentation>
+                        <xs:documentation> Child prompt element that supports Go template syntax.
+                            Content can include template expressions like {{.variableName}}. </xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
                         <xs:simpleContent>
@@ -42,58 +39,46 @@
             <!-- Model selection -->
             <xs:attribute name="model" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation>
-                        The OpenAI model to use (e.g., "gpt-4", "gpt-4o", "gpt-3.5-turbo").
-                        Required unless modelexpr is provided.
-                    </xs:documentation>
+                    <xs:documentation> The OpenAI model to use (e.g., "gpt-4", "gpt-4o",
+                        "gpt-3.5-turbo"). Required unless modelexpr is provided. </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
             <xs:attribute name="modelexpr" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation>
-                        Data model expression that evaluates to the model name.
-                        Used for dynamic model selection at runtime.
-                    </xs:documentation>
+                    <xs:documentation> Data model expression that evaluates to the model name. Used
+                        for dynamic model selection at runtime. </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
             <!-- Prompt specification -->
             <xs:attribute name="prompt" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation>
-                        The prompt text for generation. Can contain data model expressions.
-                        Optional if child prompt elements are provided.
-                    </xs:documentation>
+                    <xs:documentation> The prompt text for generation. Can contain data model
+                        expressions. Optional if child prompt elements are provided. </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
             <xs:attribute name="promptexpr" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation>
-                        Data model expression that evaluates to the prompt text.
-                        Combined with the prompt attribute if both are provided.
-                    </xs:documentation>
+                    <xs:documentation> Data model expression that evaluates to the prompt text.
+                        Combined with the prompt attribute if both are provided. </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
             <!-- Output location -->
             <xs:attribute name="location" type="xs:string" use="required">
                 <xs:annotation>
-                    <xs:documentation>
-                        Data model location where the generated result will be stored.
-                        Required.
-                    </xs:documentation>
+                    <xs:documentation> Data model location where the generated result will be
+                        stored. Required. </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
             <!-- Streaming configuration -->
             <xs:attribute name="stream" type="xs:boolean" default="false">
                 <xs:annotation>
-                    <xs:documentation>
-                        Enable streaming for real-time response delivery.
-                        Default: false
-                    </xs:documentation>
+                    <xs:documentation> Enable streaming for real-time response delivery. Default:
+                        false </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
