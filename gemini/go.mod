@@ -18,7 +18,7 @@ require (
 	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1 // indirect
-	github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007202556-e629e396a034 // indirect
+	github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007203221-d033231435df // indirect
 	github.com/agentflare-ai/go-jsonschema v0.0.0-20251007203233-ad868cee4fcf // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-logr/logr v1.4.3 // indirect

@@ -12,8 +12,7 @@ github.com/agentflare-ai/agentml/prompt v0.0.0-20251018143102-20bcb34034a5 h1:p5
 github.com/agentflare-ai/agentml/prompt v0.0.0-20251018143102-20bcb34034a5/go.mod h1:Q9lh0jiyKbGjmzatJBMfujZSl8V7+4ivXR/wsXx8N/Y=
 github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1 h1:NJgrQGDcEVqv8zj6npC1WWD3jCZlOgImUI50mSoPefA=
 github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1/go.mod h1:YEpo9Bna1B9KspGezRB/gNmB/jZPlVMapJdcWsgQVx4=
-github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007202556-e629e396a034 h1:FAvkNmOVhgn1pn97RiFk8B4OY9p/7czdsQDAiP96ChE=
-github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007202556-e629e396a034/go.mod h1:N0dBLsPLkUuXtEj11mT00URWkWxqBOYUFHXcv7V4ips=
+github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007203221-d033231435df h1:ajOE0Tsw/79Js1QbJKZGCKwJbq6Z1BCnspn+GM+cm5M=
 github.com/agentflare-ai/go-jsonschema v0.0.0-20251007203233-ad868cee4fcf h1:eHv7m93YzspIc5XoNIpmSqG+pfog3PHBst88ELDLF6s=
 github.com/agentflare-ai/go-jsonschema v0.0.0-20251007203233-ad868cee4fcf/go.mod h1:Rpm8uXe7CmECmooU+Nn7P2oNvhlvXGaadKTMfgd78Lk=
 github.com/agentflare-ai/go-xmldom v0.1.0 h1:nVLKAcnFbl27OsZwGyLzkNJhQom1UjhdcXabuAQOEiA=

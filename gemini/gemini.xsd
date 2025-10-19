@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    targetNamespace="github.com/agentflare-ai/agentml/gemini"
-    xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+    targetNamespace="github.com/agentflare-ai/agentml-go/gemini"
+    xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
     elementFormDefault="qualified">
 
     <!-- Gemini generate element -->
