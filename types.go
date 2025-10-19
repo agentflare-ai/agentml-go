@@ -11,6 +11,9 @@ import (
 
 const NamespaceURI = "github.com/agentflare-ai/agentml"
 
+// RuntimeNamespaceURI is the namespace for runtime snapshot elements
+const RuntimeNamespaceURI = "github.com/agentflare-ai/agentmlx"
+
 // Data represents a data element defined in the SCXML document.
 type Data struct {
 	xmldom.Element
