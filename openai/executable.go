@@ -19,7 +19,7 @@ import (
 )
 
 // OpenAINamespaceURI is the XML namespace URI used for OpenAI executable elements.
-const OpenAINamespaceURI = "github.com/agentflare-ai/agentml/openai"
+const OpenAINamespaceURI = "github.com/agentflare-ai/agentml-go/openai"
 
 // Generate represents an OpenAI generation executable content element for SCXML.
 // It implements the scxml.Executable interface to provide AI generation capabilities
