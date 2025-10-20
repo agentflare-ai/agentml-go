@@ -65,10 +65,10 @@ go get github.com/agentflare-ai/agentml-go/...
 Reference these namespaces in your AgentML agent files:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml-go/gemini"
-       import:memory="github.com/agentflare-ai/agentml-go/memory">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -89,7 +89,7 @@ Reference these namespaces in your AgentML agent files:
     
     <transition event="response.ready" target="complete" />
   </state>
-</agent>
+</agentml>
 ```
 
 ### In Go Code

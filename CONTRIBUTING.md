@@ -268,9 +268,9 @@ Brief description of what this namespace does.
 ## Usage
 
 ```xml
-<agent import:ns="github.com/agentflare-ai/agentml-go/namespace">
+<agentml import:ns="github.com/agentflare-ai/agentml-go/namespace">
   <ns:action param="value" />
-</agent>
+</agentml>
 ```
 
 ## Configuration

@@ -82,7 +82,7 @@ client, _ := openai.NewClient(ctx, models, &openai.ClientOptions{
 
 ```xml
 <scxml xmlns="http://www.w3.org/2005/07/scxml"
-       xmlns:openai="github.com/agentflare-ai/agentml/openai"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
        version="1.0">
 
   <state id="main">

@@ -9,13 +9,9 @@ import (
 
 // Example demonstrates basic usage of the OpenAI package
 func Example() {
-	// Create models
-	models := map[openai.ModelName]*openai.Model{
-		"gpt-4o": openai.NewModel(openai.GPT4o, false),
-	}
 
 	// Create client (requires OPENAI_API_KEY environment variable)
-	client, err := openai.NewClient(context.Background(), models, &openai.ClientOptions{
+	client, err := openai.NewClient(context.Background(), &openai.ClientOptions{
 		APIKey: "your-api-key-here",
 	})
 	if err != nil {
@@ -66,26 +62,20 @@ func ExampleClient() {
 	ctx := context.Background()
 
 	// Example 1: Using with OpenAI
-	openaiClient, _ := openai.NewClient(ctx, map[openai.ModelName]*openai.Model{
-		"gpt-4o": openai.NewModel(openai.GPT4o, false),
-	}, &openai.ClientOptions{
+	openaiClient, _ := openai.NewClient(ctx, &openai.ClientOptions{
 		APIKey: "sk-...",
 	})
 	_ = openaiClient
 
 	// Example 2: Using with a local OpenAI-compatible server (e.g., vLLM, Ollama with OpenAI API)
-	localClient, _ := openai.NewClient(ctx, map[openai.ModelName]*openai.Model{
-		"llama-3": openai.NewModel(openai.Llama3, false),
-	}, &openai.ClientOptions{
+	localClient, _ := openai.NewClient(ctx, &openai.ClientOptions{
 		BaseURL: "http://localhost:8000/v1",
 		APIKey:  "not-needed", // Some local servers don't require an API key
 	})
 	_ = localClient
 
 	// Example 3: Using with other OpenAI-compatible providers
-	compatibleClient, _ := openai.NewClient(ctx, map[openai.ModelName]*openai.Model{
-		"deepseek-coder": openai.NewModel(openai.DeepSeekCoder, false),
-	}, &openai.ClientOptions{
+	compatibleClient, _ := openai.NewClient(ctx, &openai.ClientOptions{
 		BaseURL: "https://api.deepseek.com/v1",
 		APIKey:  "your-deepseek-api-key",
 	})

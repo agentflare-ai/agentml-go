@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml-go/validate"
+    xmlns:validate="github.com/agentflare-ai/agentml-go/validate"
+    elementFormDefault="qualified">
+
+    <xs:element name="validate">
+        <xs:annotation>
+            <xs:documentation>Validate AgentML content for correctness and compatibility</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="src" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Path to the AML file to validate</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="srcexpr" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Expression that evaluates to the path of the AML file to
+                        validate</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="content" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Inline AML content string to validate</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="contentexpr" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Expression that evaluates to AML content string to validate</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="location" type="xs:string" use="required">
+                <xs:annotation>
+                    <xs:documentation>Data model location where the validation result will be stored</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="strict" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>Enable strict W3C validation (treats warnings as errors)</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="recursive" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>Enable recursive validation of invoked SCXML files</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

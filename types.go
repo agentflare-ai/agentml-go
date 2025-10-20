@@ -189,6 +189,25 @@ type IOProcessor interface {
 	Shutdown(ctx context.Context) error
 }
 
+// Invoker defines the interface for long-running invoked services
+// Invokers are created when <invoke> elements are processed and run until cancelled
+type Invoker interface {
+	// Handle is called once when the invoke starts and runs until context is cancelled
+	// The event contains invoke parameters in event.Data (from <param> elements)
+	// This method should block until:
+	//   - Context is cancelled (parent state exited)
+	//   - An unrecoverable error occurs
+	//   - The service naturally completes
+	// ctx: context that will be cancelled when the parent state exits
+	// event: initial invoke event with parameters
+	// Returns error if service fails (generates error.execution event)
+	Handle(ctx context.Context, event *Event) error
+}
+
+// InvokeLoader creates an Invoker instance bound to an interpreter
+// This factory pattern allows invokers to access the interpreter for sending events
+type InvokeLoader func(ctx context.Context, interpreter Interpreter) (Invoker, error)
+
 // Executor represents any executable content that can be executed
 type Executor interface {
 	xmldom.Element
@@ -401,6 +420,10 @@ type Interpreter interface {
 	InvokedSessions() map[string]Interpreter
 	Tracer() Tracer
 	Snapshot(ctx context.Context, maybeConfig ...SnapshotConfig) (xmldom.Document, error)
+	// AfterFunc registers a function to be called when the provided context is cancelled
+	// Returns a stop function that can be called to unregister the callback
+	// This enables cross-language context cancellation for WASM/WIT components
+	AfterFunc(ctx context.Context, fn func()) func() bool
 }
 
 // Position contains source position information for a diagnostic

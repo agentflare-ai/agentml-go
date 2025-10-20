@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const NamespaceURI = "github.com/agentflare-ai/agentml/env"
+const NamespaceURI = "github.com/agentflare-ai/agentml-go/env"
 
 type Namespace struct {
 	itp agentml.Interpreter

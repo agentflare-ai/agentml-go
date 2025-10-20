@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    targetNamespace="github.com/agentflare-ai/agentml/memory"
-    xmlns:memory="github.com/agentflare-ai/agentml/memory"
+    targetNamespace="github.com/agentflare-ai/agentml-go/memory"
+    xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
     elementFormDefault="qualified">
 
     <!-- Key-Value Store Operations -->
@@ -369,7 +369,8 @@
 
     <xs:element name="graph">
         <xs:annotation>
-            <xs:documentation>Legacy graph operations (use dedicated elements like addnode, addedge instead)</xs:documentation>
+            <xs:documentation>Legacy graph operations (use dedicated elements like addnode, addedge
+                instead)</xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="op" type="xs:string" use="required" />

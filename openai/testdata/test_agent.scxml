@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       version="1.0"
+       initial="idle"
+       datamodel="ecmascript">
+
+    <datamodel>
+        <data id="request_count" expr="0"/>
+        <data id="last_request" expr="null"/>
+    </datamodel>
+
+    <!-- Idle state - waiting for user requests -->
+    <state id="idle">
+        <transition event="user.request" target="processing"
+                    schema='{"type":"object","properties":{"query":{"type":"string"},"context":{"type":"object"}},"required":["query"]}'>
+        </transition>
+        <transition event="system.shutdown" target="done"/>
+    </state>
+
+    <!-- Processing state - handling the request -->
+    <state id="processing">
+        <onentry>
+            <assign location="request_count" expr="request_count + 1"/>
+        </onentry>
+
+        <transition event="task.complete" target="idle"
+                    schema='{"type":"object","properties":{"result":{"type":"string"},"confidence":{"type":"number"}},"required":["result"]}'>
+        </transition>
+        <transition event="task.failed" target="error"
+                    schema='{"type":"object","properties":{"error":{"type":"string"},"retry":{"type":"boolean"}}}'>
+        </transition>
+    </state>
+
+    <!-- Error state - handling failures -->
+    <state id="error">
+        <transition event="retry.request" target="processing"/>
+        <transition event="cancel.request" target="idle"/>
+    </state>
+
+    <!-- Final state -->
+    <final id="done"/>
+</scxml>

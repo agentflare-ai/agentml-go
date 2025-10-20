@@ -3,6 +3,7 @@ package prompt
 import (
 	"strings"
 
+	"github.com/agentflare-ai/agentml-go"
 	"github.com/agentflare-ai/go-xmldom"
 )
 
@@ -11,6 +12,7 @@ import (
 // - The static datamodel definition (since runtime:datamodel has the actual values)
 // - event:schema attributes (since they're in the function declarations)
 // - All action/executable content elements while preserving state structure
+// - runtime:actions section (since transitions are converted to LLM tools/functions)
 func PruneSnapshot(doc xmldom.Document) {
 	if doc == nil {
 		return
@@ -26,46 +28,38 @@ func PruneSnapshot(doc xmldom.Document) {
 	for i := uint(0); i < datamodels.Length(); i++ {
 		dm := datamodels.Item(i).(xmldom.Element)
 		// Only remove if it's not in the runtime namespace
-		if dm.NamespaceURI() != "urn:gogo:scxml:runtime:1" {
+		if dm.NamespaceURI() != xmldom.DOMString(agentml.RuntimeNamespaceURI) {
 			if parent := dm.ParentNode(); parent != nil {
 				parent.RemoveChild(dm)
 			}
 		}
 	}
 
-	// Remove event:schema attributes from all transitions
-	removeAttributesRecursive(root, "schema", "http://gogo-agent.com/event/1.0")
+	// Remove runtime:actions element since transitions are converted to LLM tools
+	runtimeActions := root.GetElementsByTagNameNS(agentml.RuntimeNamespaceURI, "actions")
+	for i := uint(0); i < runtimeActions.Length(); i++ {
+		if elem, ok := runtimeActions.Item(i).(xmldom.Element); ok {
+			if parent := elem.ParentNode(); parent != nil {
+				parent.RemoveChild(elem)
+			}
+		}
+	}
+
+	// Remove schema attributes from all transition elements (since they're in the function declarations)
+	transitions := root.GetElementsByTagName("transition")
+	for i := uint(0); i < transitions.Length(); i++ {
+		if elem, ok := transitions.Item(i).(xmldom.Element); ok {
+			elem.RemoveAttribute("schema")
+		}
+	}
 
 	// Strip out all action elements while preserving structure
 	stripActionElements(root)
 }
 
-// removeAttributesRecursive removes all attributes with given name and namespace from element tree
-func removeAttributesRecursive(elem xmldom.Element, attrName, namespace string) {
-	if elem == nil {
-		return
-	}
-
-	// Remove the attribute from current element
-	elem.RemoveAttributeNS(xmldom.DOMString(namespace), xmldom.DOMString(attrName))
-
-	// Process all child elements
-	children := elem.ChildNodes()
-	for i := uint(0); i < children.Length(); i++ {
-		if child, ok := children.Item(i).(xmldom.Element); ok {
-			removeAttributesRecursive(child, attrName, namespace)
-		}
-	}
-}
-
-// stripActionElements removes all action/executable content elements while preserving structure
-func stripActionElements(elem xmldom.Element) {
-	if elem == nil {
-		return
-	}
-
+var (
 	// Define elements that should be removed (executable content and action elements)
-	removeElements := map[string]bool{
+	removeElements = map[string]bool{
 		// Executable content wrappers
 		"onentry": true,
 		"onexit":  true,
@@ -93,7 +87,8 @@ func stripActionElements(elem xmldom.Element) {
 	}
 
 	// Core structural elements to preserve
-	structuralElements := map[string]bool{
+	structuralElements = map[string]bool{
+		"agentml":    true,
 		"scxml":      true,
 		"state":      true,
 		"parallel":   true,
@@ -102,6 +97,13 @@ func stripActionElements(elem xmldom.Element) {
 		"final":      true,
 		"history":    true,
 		"invoke":     true, // Keep invoke structure but remove its finalize
+	}
+)
+
+// stripActionElements removes all action/executable content elements while preserving structure
+func stripActionElements(elem xmldom.Element) {
+	if elem == nil {
+		return
 	}
 
 	// Iterate through children and process them
@@ -113,7 +115,7 @@ func stripActionElements(elem xmldom.Element) {
 			localName := string(childElem.LocalName())
 
 			// Check if this is a runtime:* element - always preserve these
-			if childElem.NamespaceURI() == "urn:gogo:scxml:runtime:1" {
+			if childElem.NamespaceURI() == xmldom.DOMString(agentml.RuntimeNamespaceURI) {
 				// Keep all runtime:* elements and their children
 				continue
 			}

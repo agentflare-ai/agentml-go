@@ -5,12 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"strings"
 	"text/template"
 
-	"github.com/agentflare-ai/agentml"
-	"github.com/agentflare-ai/agentml/prompt"
+	"github.com/agentflare-ai/agentml-go"
+	"github.com/agentflare-ai/agentml-go/prompt"
+	"github.com/agentflare-ai/go-jsonschema"
 	"github.com/agentflare-ai/go-xmldom"
 	"github.com/openai/openai-go"
 	"go.opentelemetry.io/otel"
@@ -165,23 +168,29 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 		}
 	}
 
-	// Build system instruction from SCXML snapshot (like Gemini does)
+	// Build system instruction from SCXML snapshot and extract available transitions
 	var systemPrompt string
-	if doc, err := interpreter.Snapshot(ctx, agentml.SnapshotConfig{ExcludeConfiguration: true, ExcludeData: true}); err == nil {
+	var openaiTools []openai.ChatCompletionToolParam
+	var eventNameMapping map[string]string // Maps sanitized function names to original event names
+	if doc, err := interpreter.Snapshot(ctx, agentml.SnapshotConfig{}); err == nil {
+		// Extract transitions from snapshot to build dynamic tools BEFORE pruning
+		// (pruning removes runtime:actions which contains the scoped transitions)
+		transitions := extractTransitions(doc)
+		sendFunctions := prompt.BuildSendFunctions(transitions)
+		openaiTools, eventNameMapping = convertToOpenAIToolsWithMapping(sendFunctions)
+		slog.Debug("openai.generate.execute: built tools from snapshot", "count", len(openaiTools), "mapping", eventNameMapping)
+
 		// Prune redundant information from snapshot
 		prompt.PruneSnapshot(doc)
 
 		slog.Debug("openai.generate.execute: pruned snapshot ready")
+
 		// Marshal and compress for minimal token usage
-		if b, err2 := xmldom.Marshal(doc); err2 == nil {
+		if b, err2 := xmldom.MarshalIndentWithOptions(doc, "", "  ", true, false); err2 == nil {
 			systemPrompt = prompt.CompressXML(string(b))
 		}
 	}
-
-	// TODO: Build tools from available actions when Actions() method is implemented
-	// For now, tools must be configured separately if needed
-	var openaiTools []openai.ChatCompletionToolParam
-	_ = openaiTools // Unused for now
+	slog.Debug("openai.generate.execute: system prompt built", "systemPrompt", systemPrompt)
 
 	span.SetAttributes(attribute.String("openai.prompt_length", fmt.Sprintf("%d", len(finalPrompt))))
 
@@ -217,7 +226,7 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 		}
 
 		// Process tool calls
-		if err := processOpenAIToolCalls(ctx, interpreter, response); err != nil {
+		if err := processOpenAIToolCalls(ctx, interpreter, response, eventNameMapping); err != nil {
 			span.RecordError(err)
 			return &agentml.PlatformError{
 				EventName: "error.execution",
@@ -265,8 +274,204 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 	return nil
 }
 
-// processOpenAIToolCalls processes tool calls from OpenAI response and sends corresponding events
-func processOpenAIToolCalls(ctx context.Context, it agentml.Interpreter, resp *openai.ChatCompletion) error {
+// extractTransitions extracts only the available (scoped) transition elements from a snapshot document.
+// This reads from runtime:actions/runtime:send which contains only transitions available from the current state.
+func extractTransitions(doc xmldom.Document) []xmldom.Element {
+	if doc == nil {
+		return nil
+	}
+
+	root := doc.DocumentElement()
+	if root == nil {
+		return nil
+	}
+
+	var transitions []xmldom.Element
+
+	// Look for runtime:snapshot/runtime:actions/runtime:send/runtime:transition elements
+	// These are already scoped to the current state configuration
+	runtimeTransitions := root.GetElementsByTagNameNS(agentml.RuntimeNamespaceURI, "transition")
+	for i := uint(0); i < runtimeTransitions.Length(); i++ {
+		if elem, ok := runtimeTransitions.Item(i).(xmldom.Element); ok {
+			// Only include transitions that are under runtime:send (external events)
+			// Walk up the parent chain to verify this is under runtime:send
+			parent := elem.ParentNode()
+			if parent != nil {
+				if parentElem, ok := parent.(xmldom.Element); ok {
+					if string(parentElem.LocalName()) == "send" &&
+						parentElem.NamespaceURI() == xmldom.DOMString(agentml.RuntimeNamespaceURI) {
+						transitions = append(transitions, elem)
+					}
+				}
+			}
+		}
+	}
+
+	return transitions
+}
+
+// sanitizeFunctionName sanitizes a function name to meet OpenAI's requirements.
+// OpenAI requires function names to match the pattern ^[a-zA-Z0-9_-]+$
+// This replaces dots and other invalid characters with underscores.
+func sanitizeFunctionName(name string) string {
+	result := make([]byte, 0, len(name))
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		// Allow alphanumeric, underscore, and hyphen
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' {
+			result = append(result, c)
+		} else {
+			// Replace invalid characters with underscore
+			result = append(result, '_')
+		}
+	}
+	return string(result)
+}
+
+// schemaToMap converts a jsonschema.Schema to map[string]any for OpenAI API compatibility
+func schemaToMap(schema *jsonschema.Schema) map[string]any {
+	if schema == nil {
+		return map[string]any{"type": "object"}
+	}
+
+	result := map[string]any{}
+
+	// Add type (convert jsonschema.JSONType to string)
+	typeStr := string(schema.Type)
+	if typeStr != "" {
+		result["type"] = typeStr
+	}
+
+	// Add description
+	if schema.Description != "" {
+		result["description"] = schema.Description
+	}
+
+	// Add properties recursively
+	if len(schema.Properties) > 0 {
+		props := make(map[string]any)
+		for key, propSchema := range schema.Properties {
+			props[key] = schemaToMap(propSchema)
+		}
+		result["properties"] = props
+	}
+
+	// Add required fields
+	if len(schema.Required) > 0 {
+		result["required"] = schema.Required
+	}
+
+	// Add items for arrays (OpenAI requires this for array types)
+	if typeStr == "array" {
+		if schema.Items != nil {
+			result["items"] = schemaToMap(schema.Items)
+		} else {
+			// OpenAI requires items for array types - provide a generic object fallback
+			result["items"] = map[string]any{"type": "object"}
+		}
+	}
+
+	// Add enum values
+	if len(schema.Enum) > 0 {
+		result["enum"] = schema.Enum
+	}
+
+	// Add format
+	if schema.Format != "" {
+		result["format"] = schema.Format
+	}
+
+	// Add validation constraints
+	if schema.MinLength != nil && *schema.MinLength > 0 {
+		result["minLength"] = *schema.MinLength
+	}
+	if schema.MaxLength != nil && *schema.MaxLength > 0 {
+		result["maxLength"] = *schema.MaxLength
+	}
+	if schema.Minimum != nil {
+		result["minimum"] = schema.Minimum
+	}
+	if schema.Maximum != nil {
+		result["maximum"] = schema.Maximum
+	}
+	if schema.MinItems != nil && *schema.MinItems > 0 {
+		result["minItems"] = *schema.MinItems
+	}
+	if schema.MaxItems != nil && *schema.MaxItems > 0 {
+		result["maxItems"] = *schema.MaxItems
+	}
+
+	return result
+}
+
+// convertToOpenAIToolsWithMapping converts prompt.SendFunction declarations to OpenAI tool parameters
+// and returns a mapping from sanitized function names to original event names.
+func convertToOpenAIToolsWithMapping(sendFunctions []prompt.SendFunction) ([]openai.ChatCompletionToolParam, map[string]string) {
+	var tools []openai.ChatCompletionToolParam
+	mapping := make(map[string]string)
+
+	for _, fn := range sendFunctions {
+		// Sanitize function name for OpenAI (dots are not allowed)
+		sanitizedName := sanitizeFunctionName(fn.Name)
+
+		// Extract original event name (remove "send_" prefix and convert underscores to dots)
+		originalEventName := strings.TrimPrefix(fn.Name, "send_")
+		originalEventName = strings.ReplaceAll(originalEventName, "_", ".")
+		mapping[sanitizedName] = originalEventName
+
+		// Build parameter schema for OpenAI
+		parameters := map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		}
+
+		// Add target and delay as optional parameters for all send events
+		if props, ok := parameters["properties"].(map[string]any); ok {
+			props["target"] = map[string]any{
+				"type":        "string",
+				"description": "Target destination for the event (optional)",
+			}
+			props["delay"] = map[string]any{
+				"type":        "string",
+				"description": "Delay before sending the event in CSS2 format (optional)",
+			}
+
+			// Add data property if the schema has properties
+			if fn.Schema != nil && len(fn.Schema.Properties) > 0 {
+				// Use the actual parsed schema from the data property
+				if dataSchema, hasData := fn.Schema.Properties["data"]; hasData {
+					// Convert the jsonschema.Schema to map[string]any for OpenAI
+					props["data"] = schemaToMap(dataSchema)
+				} else {
+					// Fallback to generic object if no data property
+					props["data"] = map[string]any{
+						"type":        "object",
+						"description": "Event-specific data payload",
+					}
+				}
+			}
+		}
+
+		// Create the function tool
+		tool := openai.ChatCompletionToolParam{
+			Type: openai.F(openai.ChatCompletionToolTypeFunction),
+			Function: openai.F(openai.FunctionDefinitionParam{
+				Name:        openai.String(sanitizedName),
+				Description: openai.String(fn.Description),
+				Parameters:  openai.F(openai.FunctionParameters(parameters)),
+			}),
+		}
+
+		tools = append(tools, tool)
+	}
+
+	return tools, mapping
+}
+
+// processOpenAIToolCalls processes tool calls from OpenAI response and sends corresponding events.
+// The eventNameMapping maps sanitized function names back to original event names.
+func processOpenAIToolCalls(ctx context.Context, it agentml.Interpreter, resp *openai.ChatCompletion, eventNameMapping map[string]string) error {
+	slog.Info("processOpenAIToolCalls: starting")
 	if resp == nil {
 		return fmt.Errorf("nil response")
 	}
@@ -280,60 +485,55 @@ func processOpenAIToolCalls(ctx context.Context, it agentml.Interpreter, resp *o
 		return fmt.Errorf("no tool calls in response")
 	}
 
-	for _, toolCall := range choice.Message.ToolCalls {
+	slog.Info("processOpenAIToolCalls: processing tool calls", "count", len(choice.Message.ToolCalls))
+	for i, toolCall := range choice.Message.ToolCalls {
+		slog.Info("processOpenAIToolCalls: processing tool call", "index", i, "function", toolCall.Function.Name)
 		if toolCall.Type != openai.ChatCompletionMessageToolCallTypeFunction {
 			continue
 		}
 
-		name := toolCall.Function.Name
-		if !strings.HasPrefix(name, "send_") {
-			return fmt.Errorf("unsupported function: %s (only send_* allowed)", name)
+		sanitizedName := toolCall.Function.Name
+		if !strings.HasPrefix(sanitizedName, "send_") {
+			return fmt.Errorf("unsupported function: %s (only send_* allowed)", sanitizedName)
 		}
 
-		// Extract event name
-		evName := strings.TrimPrefix(name, "send_")
+		// Map sanitized function name back to original event name
+		var evName string
+		slog.Info("processOpenAIToolCalls: looking up event", "sanitizedName", sanitizedName, "mappingExists", eventNameMapping != nil)
+		if eventNameMapping != nil {
+			if originalName, ok := eventNameMapping[sanitizedName]; ok {
+				evName = originalName
+				slog.Info("processOpenAIToolCalls: found in mapping", "sanitized", sanitizedName, "original", evName)
+			} else {
+				slog.Info("processOpenAIToolCalls: not found in mapping, using fallback", "sanitizedName", sanitizedName, "mappingKeys", eventNameMapping)
+				// Fallback: extract from sanitized name and convert underscores to dots
+				evName = strings.TrimPrefix(sanitizedName, "send_")
+				evName = strings.ReplaceAll(evName, "_", ".")
+				slog.Debug("openai.processToolCalls: no mapping found, using fallback", "sanitized", sanitizedName, "extracted", evName)
+			}
+		} else {
+			// No mapping provided, use sanitized name directly and convert underscores to dots
+			evName = strings.TrimPrefix(sanitizedName, "send_")
+			evName = strings.ReplaceAll(evName, "_", ".")
+			slog.Debug("openai.processToolCalls: no mapping provided, using sanitized name", "sanitized", sanitizedName, "extracted", evName)
+		}
 
 		// Parse arguments
-		var arguments map[string]interface{}
+		var arguments map[string]any
 		if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &arguments); err != nil {
 			return fmt.Errorf("failed to parse tool call arguments: %w", err)
 		}
 
-		// Build event data from arguments
-		var data interface{}
-		if d, ok := arguments["data"]; ok {
-			data = d
-		} else if len(arguments) > 0 {
-			// Filter out target and delay if present
-			filtered := make(map[string]interface{})
-			for k, v := range arguments {
-				if k != "target" && k != "delay" {
-					filtered[k] = v
-				}
-			}
-			if len(filtered) > 0 {
-				data = filtered
-			}
-		}
-
-		// Send SCXML external event
-		ev := &agentml.Event{
-			Name: evName,
-			Type: agentml.EventTypeExternal,
-			Data: data,
-		}
-		if target, ok := arguments["target"].(string); ok && target != "" {
-			ev.Origin = target
-		}
-		if delay, ok := arguments["delay"].(string); ok && delay != "" {
-			ev.Delay = delay
-		}
-
-		if err := it.Send(ctx, ev); err != nil {
+		slog.Info("processOpenAIToolCalls: sending event to interpreter", "event", evName)
+		// Use the handleSendCall helper for consistency
+		if err := handleSendCall(ctx, it, evName, arguments); err != nil {
+			slog.Error("processOpenAIToolCalls: handleSendCall failed", "error", err)
 			return err
 		}
+		slog.Info("processOpenAIToolCalls: event sent successfully", "event", evName)
 	}
 
+	slog.Info("processOpenAIToolCalls: all tool calls processed")
 	return nil
 }
 
@@ -431,14 +631,39 @@ func (g *Generate) processChildPrompts(ctx context.Context, interpreter agentml.
 }
 
 // processTemplate processes a text string as a Go template with the given data.
+// Includes a custom 'fetch' function for retrieving content from URLs.
 func (g *Generate) processTemplate(templateText string, data map[string]any) (string, error) {
 	// If no template syntax detected, return as-is
 	if !strings.Contains(templateText, "{{") {
 		return templateText, nil
 	}
 
-	// Create and parse template
-	tmpl, err := template.New("prompt").Parse(templateText)
+	// Create template with custom functions
+	funcMap := template.FuncMap{
+		"fetch": func(url string) string {
+			resp, err := http.Get(url)
+			if err != nil {
+				slog.Warn("fetch function failed", "url", url, "error", err)
+				return ""
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				slog.Warn("fetch function received non-200 status", "url", url, "status", resp.Status)
+				return ""
+			}
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				slog.Warn("fetch function failed to read response", "url", url, "error", err)
+				return ""
+			}
+
+			return string(body)
+		},
+	}
+
+	tmpl, err := template.New("prompt").Funcs(funcMap).Parse(templateText)
 	if err != nil {
 		// If template parsing fails, return original text
 		return templateText, nil
@@ -501,3 +726,160 @@ func NewGenerate(ctx context.Context, element xmldom.Element) (agentml.Executor,
 
 // Ensure Generate implements the agentml.Executor interface
 var _ agentml.Executor = (*Generate)(nil)
+
+// toolConfigFrom creates an OpenAI tool config from function declarations.
+// This limits allowed function names to the provided declarations.
+func toolConfigFrom(fns []openai.ChatCompletionToolParam) []openai.ChatCompletionToolParam {
+	return fns
+}
+
+// processFunctionCalls processes function calls from OpenAI response and handles different call types.
+// It supports send_*, Raise, and Cancel function calls, and optionally allows text responses.
+func processFunctionCalls(ctx context.Context, it agentml.Interpreter, resp *openai.ChatCompletion, fns []openai.ChatCompletionToolParam, allowText bool, location string) error {
+	if resp == nil {
+		return fmt.Errorf("nil response")
+	}
+	dm := it.DataModel()
+	processed := false
+	for _, choice := range resp.Choices {
+		if len(choice.Message.ToolCalls) == 0 {
+			// Handle text response if allowed
+			if choice.Message.Content != "" && allowText {
+				if location != "" && dm != nil {
+					_ = dm.Assign(ctx, location, choice.Message.Content)
+				}
+				continue
+			}
+			if choice.Message.Content != "" {
+				return fmt.Errorf("non-function content is not allowed; model must return function calls only")
+			}
+			continue
+		}
+
+		for _, toolCall := range choice.Message.ToolCalls {
+			if toolCall.Type != openai.ChatCompletionMessageToolCallTypeFunction {
+				continue
+			}
+			processed = true
+			name := toolCall.Function.Name
+
+			// Parse function arguments
+			var args map[string]any
+			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+				return fmt.Errorf("failed to parse tool call arguments: %w", err)
+			}
+
+			// Handle different function types
+			if strings.HasPrefix(name, "send_") {
+				evName := strings.TrimPrefix(name, "send_")
+				return handleSendCall(ctx, it, evName, args)
+			}
+			switch name {
+			case "Raise":
+				return handleRaiseCall(ctx, it, args)
+			case "Cancel":
+				return handleCancelCall(ctx, it, args)
+			default:
+				return fmt.Errorf("unsupported function: %s", name)
+			}
+		}
+	}
+	if !processed {
+		return fmt.Errorf("no function calls in response")
+	}
+	return nil
+}
+
+// handleRaiseCall processes a Raise function call and raises an internal event.
+func handleRaiseCall(ctx context.Context, it agentml.Interpreter, args map[string]any) error {
+	name, _ := args["name"].(string)
+	data := args["data"]
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("Raise.name required")
+	}
+	ev := &agentml.Event{
+		Name: name,
+		Type: agentml.EventTypeInternal,
+		Data: data,
+	}
+	it.Raise(ctx, ev)
+	return nil
+}
+
+// normalizeDelay converts various delay formats and normalizes zero delays to empty string
+// Returns empty string for zero delays (immediate send) or the normalized delay string
+func normalizeDelay(delay string) string {
+	delay = strings.TrimSpace(delay)
+
+	// Handle empty or zero delays - these should be immediate sends
+	if delay == "" || delay == "0" || delay == "0s" || delay == "0ms" {
+		return "" // Empty string means immediate send
+	}
+
+	// Handle ISO 8601 zero duration cases
+	if delay == "PT0S" || delay == "P0D" {
+		return "" // Empty string means immediate send
+	}
+
+	// For ISO 8601 durations, try to convert them
+	if strings.HasPrefix(delay, "P") {
+		// This would be the place to add full ISO 8601 to CSS2 conversion
+		// For now, just handle the zero cases above
+		return delay // Keep as-is if we can't convert
+	}
+
+	return delay // Return normalized delay
+}
+
+// handleSendCall processes a send_* function call and sends an external event.
+func handleSendCall(ctx context.Context, it agentml.Interpreter, eventName string, args map[string]any) error {
+	// Build event data from arguments
+	var data any
+	if d, ok := args["data"]; ok {
+		data = d
+	} else if len(args) > 0 {
+		// Filter out target and delay if present
+		filtered := make(map[string]any)
+		for k, v := range args {
+			if k != "target" && k != "delay" {
+				filtered[k] = v
+			}
+		}
+		if len(filtered) > 0 {
+			data = filtered
+		}
+	}
+
+	target, _ := args["target"].(string)
+	delay, _ := args["delay"].(string)
+	ev := &agentml.Event{
+		Name: eventName,
+		Type: agentml.EventTypeExternal,
+		Data: data,
+	}
+	if target != "" {
+		ev.Origin = target
+	}
+	if delay != "" {
+		// Normalize delay format and convert zero delays to empty string (immediate send)
+		normalizedDelay := normalizeDelay(delay)
+		if normalizedDelay != delay {
+			slog.WarnContext(ctx, "Normalized delay format",
+				"original", delay, "normalized", normalizedDelay)
+		}
+		if normalizedDelay != "" {
+			ev.Delay = normalizedDelay
+		}
+		// If normalizedDelay is empty, ev.Delay remains unset (immediate send)
+	}
+	return it.Send(ctx, ev)
+}
+
+// handleCancelCall processes a Cancel function call and cancels a delayed send operation.
+func handleCancelCall(ctx context.Context, it agentml.Interpreter, args map[string]any) error {
+	sendId, _ := args["sendId"].(string)
+	if strings.TrimSpace(sendId) == "" {
+		return fmt.Errorf("Cancel.sendId required")
+	}
+	return it.Cancel(ctx, sendId)
+}

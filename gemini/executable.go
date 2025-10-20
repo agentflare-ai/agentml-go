@@ -19,7 +19,7 @@ import (
 )
 
 // GeminiNamespaceURI is the XML namespace URI used for Gemini executable elements.
-const GeminiNamespaceURI = "github.com/agentflare-ai/agentml/gemini"
+const GeminiNamespaceURI = "github.com/agentflare-ai/agentml-go/gemini"
 
 // Deps holds dependencies for Gemini executables.
 // Aligns with the DI style used across the project (e.g., memory package).
