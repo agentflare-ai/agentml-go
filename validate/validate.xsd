@@ -4,22 +4,11 @@
     xmlns:validate="github.com/agentflare-ai/agentml-go/validate"
     elementFormDefault="qualified">
 
-    <xs:element name="validate">
+    <xs:element name="content">
         <xs:annotation>
             <xs:documentation>Validate AgentML content for correctness and compatibility</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="src" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Path to the AML file to validate</xs:documentation>
-                </xs:annotation>
-            </xs:attribute>
-            <xs:attribute name="srcexpr" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Expression that evaluates to the path of the AML file to
-                        validate</xs:documentation>
-                </xs:annotation>
-            </xs:attribute>
             <xs:attribute name="content" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>Inline AML content string to validate</xs:documentation>

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -40,7 +39,7 @@ func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error)
 	}
 	local := strings.ToLower(string(el.LocalName()))
 	switch local {
-	case "validate":
+	case "content":
 		return true, n.execValidate(ctx, el)
 	default:
 		return false, nil
@@ -49,7 +48,7 @@ func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error)
 
 func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 	tr := otel.Tracer("validate")
-	ctx, span := tr.Start(ctx, "validate.validate")
+	ctx, span := tr.Start(ctx, "validate.content")
 	defer span.End()
 
 	dm := n.itp.DataModel()
@@ -57,16 +56,16 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
 			Message:   "No data model available for validate",
-			Data:      map[string]any{"element": "validate"},
+			Data:      map[string]any{"element": "content"},
 			Cause:     fmt.Errorf("no datamodel"),
 		}
 	}
 
-	// Get AML content - either from file (src) or from data model (content)
+	// Get AML content - either from content attribute or contentexpr
 	var xmlContent string
 	var sourceName string
 
-	// Try content attribute first (data model content)
+	// Try content attribute first (inline content)
 	content := strings.TrimSpace(string(el.GetAttribute("content")))
 	if content != "" {
 		xmlContent = content
@@ -81,7 +80,7 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 				return &agentml.PlatformError{
 					EventName: "error.execution",
 					Message:   "Failed to evaluate contentexpr",
-					Data:      map[string]any{"element": "validate", "contentexpr": contentExpr},
+					Data:      map[string]any{"element": "content", "contentexpr": contentExpr},
 					Cause:     err,
 				}
 			}
@@ -93,52 +92,13 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		}
 	}
 
-	// If no content provided, try file-based validation
 	if xmlContent == "" {
-		src := strings.TrimSpace(string(el.GetAttribute("src")))
-		if src == "" {
-			// Try srcexpr if src is not provided
-			srcExpr := strings.TrimSpace(string(el.GetAttribute("srcexpr")))
-			if srcExpr != "" {
-				val, err := dm.EvaluateValue(ctx, srcExpr)
-				if err != nil {
-					return &agentml.PlatformError{
-						EventName: "error.execution",
-						Message:   "Failed to evaluate srcexpr",
-						Data:      map[string]any{"element": "validate", "srcexpr": srcExpr},
-						Cause:     err,
-					}
-				}
-				if s, ok := val.(string); ok {
-					src = s
-				}
-			}
+		return &agentml.PlatformError{
+			EventName: "error.execution",
+			Message:   "validate:content requires content or contentexpr attribute",
+			Data:      map[string]any{"element": "content"},
+			Cause:     fmt.Errorf("missing content"),
 		}
-
-		if src == "" {
-			return &agentml.PlatformError{
-				EventName: "error.execution",
-				Message:   "validate:validate requires either content/contentexpr or src/srcexpr attribute",
-				Data:      map[string]any{"element": "validate"},
-				Cause:     fmt.Errorf("missing content or src"),
-			}
-		}
-
-		span.SetAttributes(attribute.String("validate.src", src))
-
-		// Read the AML file
-		xmlData, err := os.ReadFile(src)
-		if err != nil {
-			return &agentml.PlatformError{
-				EventName: "error.execution",
-				Message:   "Failed to read AML file",
-				Data:      map[string]any{"element": "validate", "src": src},
-				Cause:     err,
-			}
-		}
-		xmlContent = string(xmlData)
-		sourceName = src
-		span.SetAttributes(attribute.String("validate.source", "file"))
 	}
 
 	// Get the location attribute where we should store the result (required)
@@ -146,8 +106,8 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 	if loc == "" {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
-			Message:   "validate:validate requires location attribute",
-			Data:      map[string]any{"element": "validate", "source": sourceName},
+			Message:   "validate:content requires location attribute",
+			Data:      map[string]any{"element": "content", "source": sourceName},
 			Cause:     fmt.Errorf("missing location"),
 		}
 	}
@@ -172,23 +132,10 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		attribute.Bool("validate.recursive", recursive),
 	)
 
-	// Determine base path for relative schema/invoke resolution
-	// For file-based validation, use the file's directory
-	// For content-based validation, use current working directory
-	var basePath string
-	if sourceName != "inline-content" && sourceName != "contentexpr" {
-		absPath, err := filepath.Abs(sourceName)
-		if err != nil {
-			absPath = sourceName
-		}
-		basePath = filepath.Dir(absPath)
-	} else {
-		// For content validation, use current working directory
-		if cwd, err := os.Getwd(); err == nil {
-			basePath = cwd
-		} else {
-			basePath = "."
-		}
+	// For content validation, use current working directory for schema resolution
+	basePath := "."
+	if cwd, err := os.Getwd(); err == nil {
+		basePath = cwd
 	}
 
 	// Create validator with appropriate config
@@ -208,7 +155,7 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
 			Message:   "Validation failed",
-			Data:      map[string]any{"element": "validate", "source": sourceName, "location": loc},
+			Data:      map[string]any{"element": "content", "source": sourceName, "location": loc},
 			Cause:     err,
 		}
 	}

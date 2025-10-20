@@ -7,7 +7,7 @@ import (
 	"github.com/agentflare-ai/agentmlx/validator"
 )
 
-func TestNamespace_ValidateAML(t *testing.T) {
+func TestNamespace_URI(t *testing.T) {
 	// Test that the namespace can be created and has correct URI
 	ns := &Namespace{}
 	if uri := ns.URI(); uri != NamespaceURI {
