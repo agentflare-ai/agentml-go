@@ -87,6 +87,14 @@ client, _ := openai.NewClient(ctx, models, &openai.ClientOptions{
 
   <state id="main">
     <onentry>
+      <!-- When tools are available, location is optional -->
+      <openai:generate model="gpt-4o">
+        <openai:prompt>
+          What action should I take next?
+        </openai:prompt>
+      </openai:generate>
+
+      <!-- When no tools available, location is required -->
       <openai:generate
           model="gpt-4o"
           prompt="What is the meaning of life?"

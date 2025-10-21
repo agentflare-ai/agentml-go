@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/agentflare-ai/agentml"
+	"github.com/agentflare-ai/agentml-go"
 	"github.com/agentflare-ai/go-xmldom"
 )
 

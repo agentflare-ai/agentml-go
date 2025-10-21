@@ -81,13 +81,12 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 		}
 	}
 
+	// Location is only required when no tools will be available (fallback case)
+	// When tools are available, the LLM drives state transitions through function calls
 	if g.Location == "" {
-		return &agentml.PlatformError{
-			EventName: "error.execution",
-			Message:   "Generate element missing required 'location' attribute",
-			Data:      map[string]any{"element": "openai:generate", "line": 0},
-			Cause:     fmt.Errorf("generate element missing required 'location' attribute"),
-		}
+		// Check if we expect to have tools - if so, location is optional
+		// We'll validate this after building the system prompt and tools
+		slog.Debug("[OPENAI] Location not specified - will validate after tool detection")
 	}
 
 	dataModel := interpreter.DataModel()
@@ -132,6 +131,7 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 			Cause:     err,
 		}
 	}
+	slog.Debug("[OPENAI] Prompt text", "text", promptText)
 
 	// Also support dynamic promptexpr (evaluated via data model)
 	if pe := string(g.Element.GetAttribute("promptexpr")); strings.TrimSpace(pe) != "" {
@@ -190,7 +190,6 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 			systemPrompt = prompt.CompressXML(string(b))
 		}
 	}
-	slog.Debug("openai.generate.execute: system prompt built", "systemPrompt", systemPrompt)
 
 	span.SetAttributes(attribute.String("openai.prompt_length", fmt.Sprintf("%d", len(finalPrompt))))
 
@@ -209,6 +208,16 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 	messages := []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage(systemPrompt),
 		openai.UserMessage(finalPrompt),
+	}
+
+	// Validate location requirement based on tool availability
+	if len(openaiTools) == 0 && g.Location == "" {
+		return &agentml.PlatformError{
+			EventName: "error.execution",
+			Message:   "Generate element missing required 'location' attribute (no tools available for function calls)",
+			Data:      map[string]any{"element": "openai:generate", "line": 0},
+			Cause:     fmt.Errorf("location required when no tools are available"),
+		}
 	}
 
 	// Use ChatWithTools if tools are available
@@ -613,11 +622,24 @@ func (g *Generate) processChildPrompts(ctx context.Context, interpreter agentml.
 		if string(localName) == "prompt" && (string(namespaceURI) == OpenAINamespaceURI || string(namespaceURI) == "") {
 			// Get the text content of the prompt element
 			promptContent := string(element.TextContent())
+			promptContent = strings.TrimSpace(promptContent)
 			if promptContent == "" {
 				continue
 			}
 
-			// Process as Go template
+			// Evaluate through data model if it looks like an ECMAScript expression
+			// (wrapped in backticks or contains ${...})
+			if dataModel != nil && (strings.HasPrefix(promptContent, "`") || strings.Contains(promptContent, "${")) {
+				result, err := dataModel.EvaluateValue(ctx, promptContent)
+				if err != nil {
+					// If evaluation fails, use original content
+					slog.Warn("failed to evaluate prompt through data model", "error", err)
+				} else if str, ok := result.(string); ok {
+					promptContent = str
+				}
+			}
+
+			// Process Go templates ({{...}}) for things like fetch
 			processedPrompt, err := g.processTemplate(promptContent, templateData)
 			if err != nil {
 				return nil, fmt.Errorf("failed to process template in prompt element: %w", err)
@@ -709,9 +731,7 @@ func NewGenerate(ctx context.Context, element xmldom.Element) (agentml.Executor,
 		return nil, fmt.Errorf("generate element missing required 'model' attribute")
 	}
 
-	if location == "" {
-		return nil, fmt.Errorf("generate element missing required 'location' attribute")
-	}
+	// Location is now optional (validated at runtime based on tool availability)
 
 	// Note: prompt can be empty if content will come from child elements
 

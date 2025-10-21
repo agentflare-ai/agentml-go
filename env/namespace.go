@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/agentflare-ai/agentml"
+	"github.com/agentflare-ai/agentml-go"
 	"github.com/agentflare-ai/go-xmldom"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

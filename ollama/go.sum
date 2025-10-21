@@ -1,4 +1,4 @@
-github.com/agentflare-ai/agentml v0.1.1 h1:LSCQHjEhfYvpAs1YChvPdkNdNddsJnxlg5yLrXGtPyo=
+github.com/agentflare-ai/agentml-go v0.1.0-beta.1 h1:Nwqlpt/M5wiajsvq7qXT9rPx8NvIi2qWxK5WjsZjO54=
 github.com/agentflare-ai/agentml/ollama v0.0.0-20251016013916-3aaadb906bd0 h1:+OElHSNvB8vxCfNaAxHHOjdOxbbFtYMBCW3Xmo01E3o=
 github.com/agentflare-ai/agentml/prompt v0.0.0-20251018143102-20bcb34034a5 h1:p5O8udY1VCRiN+JcfqshuvvnclHwLM5g0xqxzOleNsw=
 github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1 h1:NJgrQGDcEVqv8zj6npC1WWD3jCZlOgImUI50mSoPefA=

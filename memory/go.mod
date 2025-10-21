@@ -3,7 +3,7 @@ module github.com/agentflare-ai/agentml-go/memory
 go 1.24.5
 
 require (
-	github.com/agentflare-ai/agentml v0.1.1
+	github.com/agentflare-ai/agentml-go v0.1.0-beta.1
 	github.com/agentflare-ai/go-jsonschema v0.0.0-20251007203233-ad868cee4fcf
 	github.com/agentflare-ai/go-xmldom v0.1.0
 	github.com/mattn/go-sqlite3 v1.14.32

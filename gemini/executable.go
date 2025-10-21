@@ -9,8 +9,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/agentflare-ai/agentml"
-	"github.com/agentflare-ai/agentml/prompt"
+	"github.com/agentflare-ai/agentml-go"
+	"github.com/agentflare-ai/agentml-go/prompt"
 	"github.com/agentflare-ai/go-xmldom"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

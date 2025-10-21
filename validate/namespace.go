@@ -3,11 +3,12 @@ package validate
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/agentflare-ai/agentml"
+	"github.com/agentflare-ai/agentml-go"
 	"github.com/agentflare-ai/agentmlx/validator"
 	"github.com/agentflare-ai/go-xmldom"
 	"go.opentelemetry.io/otel"
@@ -51,8 +52,11 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 	ctx, span := tr.Start(ctx, "validate.content")
 	defer span.End()
 
+	slog.Debug("[VALIDATE] Starting validation", "location", el.GetAttribute("location"))
+
 	dm := n.itp.DataModel()
 	if dm == nil {
+		slog.Debug("[VALIDATE] No data model available")
 		return &agentml.PlatformError{
 			EventName: "error.execution",
 			Message:   "No data model available for validate",
@@ -71,12 +75,15 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		xmlContent = content
 		sourceName = "inline-content"
 		span.SetAttributes(attribute.String("validate.source", "content"))
+		slog.Debug("[VALIDATE] Using inline content", "bytes", len(xmlContent))
 	} else {
 		// Try contentexpr for dynamic content from data model
 		contentExpr := strings.TrimSpace(string(el.GetAttribute("contentexpr")))
 		if contentExpr != "" {
+			slog.Debug("[VALIDATE] Evaluating contentexpr", "expr", contentExpr)
 			val, err := dm.EvaluateValue(ctx, contentExpr)
 			if err != nil {
+				slog.Debug("[VALIDATE] Failed to evaluate contentexpr", "error", err)
 				return &agentml.PlatformError{
 					EventName: "error.execution",
 					Message:   "Failed to evaluate contentexpr",
@@ -88,11 +95,13 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 				xmlContent = s
 				sourceName = "contentexpr"
 				span.SetAttributes(attribute.String("validate.source", "contentexpr"))
+				slog.Debug("[VALIDATE] Got content from expression", "bytes", len(xmlContent))
 			}
 		}
 	}
 
 	if xmlContent == "" {
+		slog.Debug("[VALIDATE] No content to validate")
 		return &agentml.PlatformError{
 			EventName: "error.execution",
 			Message:   "validate:content requires content or contentexpr attribute",
@@ -104,6 +113,7 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 	// Get the location attribute where we should store the result (required)
 	loc := strings.TrimSpace(string(el.GetAttribute("location")))
 	if loc == "" {
+		slog.Debug("[VALIDATE] No location specified")
 		return &agentml.PlatformError{
 			EventName: "error.execution",
 			Message:   "validate:content requires location attribute",
@@ -127,6 +137,8 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		}
 	}
 
+	slog.Debug("[VALIDATE] Creating validator", "source", sourceName, "strict", strict)
+
 	span.SetAttributes(
 		attribute.Bool("validate.strict", strict),
 		attribute.Bool("validate.recursive", recursive),
@@ -137,6 +149,7 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 	if cwd, err := os.Getwd(); err == nil {
 		basePath = cwd
 	}
+	slog.Debug("[VALIDATE] Using base path", "path", basePath)
 
 	// Create validator with appropriate config
 	cfg := validator.Config{
@@ -148,10 +161,30 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 	}
 
 	v := validator.New(cfg)
+	slog.Debug("[VALIDATE] Created validator, calling ValidateString")
 
 	// Validate
 	result, _, err := v.ValidateString(ctx, xmlContent)
 	if err != nil {
+		slog.Debug("[VALIDATE] ValidateString failed", "error", err)
+		// Even on failure, create a validation result with error info
+		validationResult := ValidationResult{
+			Valid:        false,
+			ErrorCount:   1,
+			WarningCount: 0,
+			InfoCount:    0,
+			Diagnostics: []validator.Diagnostic{{
+				Severity: validator.SeverityError,
+				Code:     "VALIDATION_ERROR",
+				Message:  err.Error(),
+			}},
+		}
+
+		// Store the result even on failure
+		if setErr := dm.SetVariable(ctx, loc, validationResult); setErr != nil {
+			slog.Debug("[VALIDATE] Failed to store error result", "error", setErr)
+		}
+
 		return &agentml.PlatformError{
 			EventName: "error.execution",
 			Message:   "Validation failed",
@@ -159,6 +192,8 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 			Cause:     err,
 		}
 	}
+
+	slog.Debug("[VALIDATE] ValidateString completed", "diagnostics", len(result.Diagnostics))
 
 	// Count diagnostics by severity
 	errorCount := 0
@@ -175,6 +210,8 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		}
 	}
 
+	slog.Debug("[VALIDATE] Validation result", "valid", !result.HasErrors(), "errors", errorCount, "warnings", warningCount, "info", infoCount)
+
 	// Create validation result
 	validationResult := ValidationResult{
 		Valid:        !result.HasErrors(),
@@ -184,8 +221,11 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 		Diagnostics:  result.Diagnostics,
 	}
 
+	slog.Debug("[VALIDATE] Storing result in data model", "location", loc)
+
 	// Store the result in the data model
 	if err := dm.SetVariable(ctx, loc, validationResult); err != nil {
+		slog.Debug("[VALIDATE] Failed to store result", "error", err)
 		return &agentml.PlatformError{
 			EventName: "error.execution",
 			Message:   "Failed to store validation result",
@@ -193,6 +233,8 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 			Cause:     err,
 		}
 	}
+
+	slog.Debug("[VALIDATE] Validation completed successfully")
 
 	span.SetAttributes(
 		attribute.Bool("validate.valid", validationResult.Valid),

@@ -5,28 +5,40 @@
     xmlns:agentml="github.com/agentflare-ai/agentml"
     elementFormDefault="qualified">
 
+    <xs:annotation>
+        <xs:documentation> OpenAI Extension for AgentML - LLM integration via OpenAI-compatible APIs
+            Namespace: github.com/agentflare-ai/agentml-go/openai Providers: OpenAI, Azure OpenAI,
+            vLLM, LocalAI, Ollama, any OpenAI-compatible endpoint </xs:documentation>
+    </xs:annotation>
+
     <xs:import namespace="github.com/agentflare-ai/agentml"
         schemaLocation="https://xsd.agentml.dev/agentml.xsd">
         <xs:annotation>
-            <xs:documentation>Import AgentML schema to access executable substitution group</xs:documentation>
+            <xs:documentation> Imports agentml:executable. openai:generate substitutes into this
+                group for use in state machine executable content. </xs:documentation>
         </xs:annotation>
     </xs:import>
 
-    <!-- OpenAI generate element - executable that generates content using OpenAI-compatible APIs -->
     <xs:element name="generate" substitutionGroup="agentml:executable">
         <xs:annotation>
-            <xs:documentation> Generate content using OpenAI or OpenAI-compatible LLM models. This
-                element integrates with any OpenAI-compatible API including OpenAI, Azure OpenAI,
-                local models via vLLM, LocalAI, Ollama (with OpenAI API), and other compatible
-                providers. </xs:documentation>
+            <xs:documentation> LLM content generation executable with two modes: MODE 1 - Function
+                Calling: LLM drives state transitions via send()/cancel() functions - location:
+                optional - Example: &lt;openai:generate model="gpt-4o" prompt="Route this request"
+                /&gt; MODE 2 - Content Generation: LLM generates text stored in data model -
+                location: REQUIRED - Example: &lt;openai:generate model="gpt-4" prompt="Summarize:
+                {{.text}}" location="summary" /&gt; REQUIREMENTS: - model OR modelexpr (required) -
+                prompt OR promptexpr OR child &lt;prompt&gt; elements (required) - Multiple prompt
+                sources concatenated: prompt + promptexpr + child prompts (in order) TEMPLATE SYNTAX
+                (Go templates): - {{.var}} - variable access - {{.obj.field}} - nested field - {{if
+                .cond}}...{{end}} - conditional - {{range .items}}...{{end}} - iteration </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <!-- Child prompt elements for template-based prompts -->
                 <xs:element name="prompt" minOccurs="0" maxOccurs="unbounded">
                     <xs:annotation>
-                        <xs:documentation> Child prompt element that supports Go template syntax.
-                            Content can include template expressions like {{.variableName}}. </xs:documentation>
+                        <xs:documentation> Child prompt element for structured multi-part prompts.
+                            Supports Go template syntax. Multiple prompts concatenated in document
+                            order. Combined with parent prompt/promptexpr if present. </xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
                         <xs:simpleContent>
@@ -36,53 +48,57 @@
                 </xs:element>
             </xs:sequence>
 
-            <!-- Model selection -->
             <xs:attribute name="model" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation> The OpenAI model to use (e.g., "gpt-4", "gpt-4o",
-                        "gpt-3.5-turbo"). Required unless modelexpr is provided. </xs:documentation>
+                    <xs:documentation> Model identifier. Required unless modelexpr provided. If both
+                        present, modelexpr takes precedence. Common: "gpt-4o" | "gpt-4-turbo" |
+                        "gpt-4" | "gpt-3.5-turbo" Azure: use deployment name </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
             <xs:attribute name="modelexpr" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation> Data model expression that evaluates to the model name. Used
-                        for dynamic model selection at runtime. </xs:documentation>
+                    <xs:documentation> Data model expression evaluating to model name. Required
+                        unless model provided. Takes precedence over model. Examples:
+                        userPrefs.model | config['model'] | selectModel(task) </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
-            <!-- Prompt specification -->
             <xs:attribute name="prompt" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation> The prompt text for generation. Can contain data model
-                        expressions. Optional if child prompt elements are provided. </xs:documentation>
+                    <xs:documentation> Prompt text with Go template support. Required unless
+                        promptexpr or child prompts provided. Concatenated before promptexpr and
+                        child prompts if multiple sources present. Examples: "Analyze {{.input}}" |
+                        "{{if .urgent}}URGENT: {{end}}{{.msg}}" </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
             <xs:attribute name="promptexpr" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation> Data model expression that evaluates to the prompt text.
-                        Combined with the prompt attribute if both are provided. </xs:documentation>
+                    <xs:documentation> Data model expression evaluating to prompt string. Required
+                        unless prompt or child prompts provided. Concatenated after prompt
+                        attribute, before child prompts if multiple sources present. Examples:
+                        prompts[type] | buildPrompt(ctx) | `Process: ${data}` </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
-            <!-- Output location -->
-            <xs:attribute name="location" type="xs:string" use="required">
+            <xs:attribute name="location" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation> Data model location where the generated result will be
-                        stored. Required. </xs:documentation>
+                    <xs:documentation> Data model path for storing response. REQUIRED in content
+                        generation mode (no tools). OPTIONAL in function calling mode. If
+                        stream=true, updated incrementally. Examples: "result" | "data.summary" |
+                        "items[0]" </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
-            <!-- Streaming configuration -->
             <xs:attribute name="stream" type="xs:boolean" default="false">
                 <xs:annotation>
-                    <xs:documentation> Enable streaming for real-time response delivery. Default:
-                        false </xs:documentation>
+                    <xs:documentation> Enable incremental streaming. Default: false true: lower
+                        latency, incremental updates, higher overhead (use for interactive) false:
+                        single response, lower overhead (use for batch) </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 
-            <!-- OpenTelemetry and debugging attributes -->
             <xs:anyAttribute namespace="##other" processContents="lax" />
         </xs:complexType>
     </xs:element>
