@@ -186,7 +186,7 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 		slog.Debug("openai.generate.execute: pruned snapshot ready")
 
 		// Marshal and compress for minimal token usage
-		if b, err2 := xmldom.MarshalIndentWithOptions(doc, "", "  ", true, false); err2 == nil {
+		if b, err2 := xmldom.MarshalIndentWithOptions(doc, "", "  ", true); err2 == nil {
 			systemPrompt = prompt.CompressXML(string(b))
 		}
 	}
