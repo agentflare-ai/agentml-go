@@ -6,7 +6,7 @@
     elementFormDefault="qualified">
 
     <xs:import namespace="github.com/agentflare-ai/agentml"
-        schemaLocation="https://xsd.agentml.dev/agentml.xsd">
+        schemaLocation="https://xsd.agentml.dev/agentflare-ai/agentml/agentml.xsd">
         <xs:annotation>
             <xs:documentation>Import AgentML schema to access invokable substitution group</xs:documentation>
         </xs:annotation>

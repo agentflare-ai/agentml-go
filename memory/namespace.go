@@ -10,9 +10,10 @@ import (
 )
 
 // Loader returns a NamespaceLoader for the memory namespace.
-func Loader(deps *Deps) agentml.NamespaceLoader {
+func Loader() agentml.NamespaceLoader {
 	return func(ctx context.Context, itp agentml.Interpreter, doc xmldom.Document) (agentml.Namespace, error) {
-		return &ns{itp: itp, deps: deps}, nil
+
+		return &ns{itp: itp}, nil
 	}
 }
 

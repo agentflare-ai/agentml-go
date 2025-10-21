@@ -25,7 +25,6 @@ func (n *Namespace) URI() string { return NamespaceURI }
 func (n *Namespace) Unload(ctx context.Context) error { return nil }
 
 func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error) {
-	fmt.Println("DEBUG: Handle")
 	if el == nil {
 		return false, fmt.Errorf("stdin: element cannot be nil")
 	}
@@ -39,7 +38,6 @@ func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error)
 }
 
 func (n *Namespace) execRead(ctx context.Context, el xmldom.Element) error {
-	fmt.Println("DEBUG: execRead")
 	tr := otel.Tracer("stdin")
 	ctx, span := tr.Start(ctx, "stdin.read")
 	defer span.End()

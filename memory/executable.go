@@ -34,7 +34,7 @@ func (d *Deps) dbtx() DBTX {
 }
 
 // MemoryNamespaceURI is the XML namespace for memory executables.
-const MemoryNamespaceURI = "github.com/agentflare-ai/agentml/memory"
+const MemoryNamespaceURI = "github.com/agentflare-ai/agentml-go/memory"
 
 // Deps holds dependencies for memory executables.
 type Deps struct {

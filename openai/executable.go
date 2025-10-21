@@ -794,6 +794,7 @@ func processFunctionCalls(ctx context.Context, it agentml.Interpreter, resp *ope
 				evName := strings.TrimPrefix(name, "send_")
 				return handleSendCall(ctx, it, evName, args)
 			}
+			slog.DebugContext(ctx, "processFunctionCalls: processing function call", "name", name, "args", args)
 			switch name {
 			case "Raise":
 				return handleRaiseCall(ctx, it, args)

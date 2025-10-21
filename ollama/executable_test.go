@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/agentflare-ai/agentml"
+	"github.com/agentflare-ai/agentml-go"
 )
 
 // Simple compilation test - verify that the package builds correctly

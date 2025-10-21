@@ -12,7 +12,7 @@
     </xs:annotation>
 
     <xs:import namespace="github.com/agentflare-ai/agentml"
-        schemaLocation="https://xsd.agentml.dev/agentml.xsd">
+        schemaLocation="https://xsd.agentml.dev/agentflare-ai/agentml/agentml.xsd">
         <xs:annotation>
             <xs:documentation> Imports agentml:executable. openai:generate substitutes into this
                 group for use in state machine executable content. </xs:documentation>

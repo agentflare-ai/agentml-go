@@ -103,44 +103,54 @@ func NewDB(ctx context.Context, dsn string) (db *sql.DB, err error) {
 				}
 
 				// Create temporary files for the extensions
-				// Use platform-suffix and ensure filename ends with proper extension
-				graphName := "graph_extension.so"
-				if runtime.GOOS == "darwin" { graphName = "graph_extension-*.dylib" } else { graphName = "graph_extension-*.so" }
+				// SQLite automatically appends the appropriate extension, so don't include it in the filename
+				graphName := "graph_extension_*"
 				graphTmpFile, err := writeExtensionToTemp(GraphExtension, graphName)
 				if err != nil {
 					wrappedErr := fmt.Errorf("store.NewDB: failed to write graph extension: %w", err)
 					slog.Error(wrappedErr.Error())
 					return wrappedErr
 				}
-				defer os.Remove(graphTmpFile)
-
-				// On darwin, sqlite may append .dylib automatically; pass path without suffix
-				graphLoadPath := graphTmpFile
+				// Rename the file to have the correct extension
+				graphTmpFileWithExt := graphTmpFile
 				if runtime.GOOS == "darwin" {
-					ext := filepath.Ext(graphTmpFile)
-					if ext == ".dylib" {
-						graphLoadPath = graphTmpFile[:len(graphTmpFile)-len(ext)]
-					}
+					graphTmpFileWithExt += ".dylib"
+				} else {
+					graphTmpFileWithExt += ".so"
 				}
+				if err := os.Rename(graphTmpFile, graphTmpFileWithExt); err != nil {
+					wrappedErr := fmt.Errorf("store.NewDB: failed to rename graph extension: %w", err)
+					slog.Error(wrappedErr.Error())
+					return wrappedErr
+				}
+				defer os.Remove(graphTmpFileWithExt)
 
-				vecName := "vec_extension.so"
-				if runtime.GOOS == "darwin" { vecName = "vec_extension-*.dylib" } else { vecName = "vec_extension-*.so" }
+				// SQLite automatically appends the shared library extension, so pass path without extension
+				graphLoadPath := graphTmpFile
+
+				vecName := "vec_extension_*"
 				vecTmpFile, err := writeExtensionToTemp(VecExtension, vecName)
 				if err != nil {
 					wrappedErr := fmt.Errorf("store.NewDB: failed to write vec extension: %w", err)
 					slog.Error(wrappedErr.Error())
 					return wrappedErr
 				}
-				defer os.Remove(vecTmpFile)
-
-				// On darwin, sqlite may append .dylib automatically; pass path without suffix
-				vecLoadPath := vecTmpFile
+				// Rename the file to have the correct extension
+				vecTmpFileWithExt := vecTmpFile
 				if runtime.GOOS == "darwin" {
-					ext := filepath.Ext(vecTmpFile)
-					if ext == ".dylib" {
-						vecLoadPath = vecTmpFile[:len(vecTmpFile)-len(ext)]
-					}
+					vecTmpFileWithExt += ".dylib"
+				} else {
+					vecTmpFileWithExt += ".so"
 				}
+				if err := os.Rename(vecTmpFile, vecTmpFileWithExt); err != nil {
+					wrappedErr := fmt.Errorf("store.NewDB: failed to rename vec extension: %w", err)
+					slog.Error(wrappedErr.Error())
+					return wrappedErr
+				}
+				defer os.Remove(vecTmpFileWithExt)
+
+				// SQLite automatically appends the shared library extension, so pass path without extension
+				vecLoadPath := vecTmpFile
 
 				// Load the extensions (best-effort). If unavailable on this platform, continue.
 				if err := conn.LoadExtension(graphLoadPath, "sqlite3_graph_init"); err != nil {
@@ -177,8 +187,7 @@ func NewDB(ctx context.Context, dsn string) (db *sql.DB, err error) {
 
 // writeExtensionToTemp writes extension data to a temporary file and returns the path
 func writeExtensionToTemp(extensionData []byte, pattern string) (string, error) {
-	// Ensure the created file ends with the correct platform suffix by using a pattern with '*'
-	// Example: "graph_extension-*.dylib" or "vec_extension-*.so"
+	// Create temp file with the given pattern
 	tmpFile, err := os.CreateTemp("", pattern)
 	if err != nil {
 		return "", err

@@ -4,6 +4,7 @@ go 1.24.5
 
 require (
 	github.com/agentflare-ai/agentml-go v0.1.0-beta.1
+	github.com/agentflare-ai/agentml-go/prompt v0.0.0-20251021003040-3683c255a02e
 	github.com/agentflare-ai/go-xmldom v0.1.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.38.0
@@ -16,6 +17,9 @@ require (
 	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
+	github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1 // indirect
+	github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007203221-d033231435df // indirect
+	github.com/agentflare-ai/go-jsonschema v0.0.0-20251007203233-ad868cee4fcf // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

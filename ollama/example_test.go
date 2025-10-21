@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/agentflare-ai/agentml/ollama"
+	"github.com/agentflare-ai/agentml-go/ollama"
 )
 
 // Example demonstrates basic usage of the Ollama package
