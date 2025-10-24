@@ -5,7 +5,7 @@ go 1.24.5
 require (
 	github.com/agentflare-ai/agentml-go v0.1.0-beta.1
 	github.com/agentflare-ai/agentml-go/prompt v0.0.0-20251021003040-3683c255a02e
-	github.com/agentflare-ai/go-xmldom v0.1.0
+	github.com/agentflare-ai/go-xmldom v0.1.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/trace v1.38.0

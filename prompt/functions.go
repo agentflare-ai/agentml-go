@@ -11,6 +11,7 @@ import (
 // SendFunction represents a send_* function declaration for LLMs
 type SendFunction struct {
 	Name        string
+	EventName   string // Original event name before sanitization
 	Description string
 	Schema      *jsonschema.Schema
 }
@@ -53,6 +54,13 @@ func BuildSendFunctions(transitions []xmldom.Element) []SendFunction {
 			if err := json.Unmarshal([]byte(schemaAttr), &dataSchema); err == nil {
 				// Use the parsed schema as the data property
 				ps.Properties["data"] = &dataSchema
+				// If the data schema has required fields, mark "data" as required at the top level
+				if len(dataSchema.Required) > 0 {
+					if ps.Required == nil {
+						ps.Required = []string{}
+					}
+					ps.Required = append(ps.Required, "data")
+				}
 			} else {
 				// If parsing fails, use a generic object schema as fallback
 				ps.Properties["data"] = &jsonschema.Schema{Type: jsonschema.TypeObject}
@@ -61,6 +69,7 @@ func BuildSendFunctions(transitions []xmldom.Element) []SendFunction {
 
 		functions = append(functions, SendFunction{
 			Name:        "send_" + strings.ReplaceAll(eventName, ".", "_"),
+			EventName:   eventName,
 			Description: "Send event '" + eventName + "' through the SCXML interpreter",
 			Schema:      ps,
 		})

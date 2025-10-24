@@ -3,7 +3,9 @@ package agentml
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/agentflare-ai/go-xmldom"
@@ -401,6 +403,21 @@ type SnapshotConfig struct {
 	ExcludeCancel        bool // exclude cancelable delayed events
 }
 
+// Filesystem provides sandboxed filesystem access for interpreters.
+// It extends fs.FS with additional file operations needed for SCXML execution.
+type Filesystem interface {
+	Close() error
+	Create(name string) (*os.File, error)
+	FS() fs.FS
+	Lstat(name string) (os.FileInfo, error)
+	Mkdir(name string, perm os.FileMode) error
+	Name() string
+	Open(name string) (*os.File, error)
+	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
+	Remove(name string) error
+	Stat(name string) (os.FileInfo, error)
+}
+
 // Interpreter interface for SCXML interpretation
 type Interpreter interface {
 	IOProcessor
@@ -420,6 +437,9 @@ type Interpreter interface {
 	InvokedSessions() map[string]Interpreter
 	Tracer() Tracer
 	Snapshot(ctx context.Context, maybeConfig ...SnapshotConfig) (xmldom.Document, error)
+	// Root returns the sandboxed filesystem for this interpreter, if available.
+	// Returns nil if no sandboxed filesystem is configured.
+	Root() Filesystem
 	// AfterFunc registers a function to be called when the provided context is cancelled
 	// Returns a stop function that can be called to unregister the callback
 	// This enables cross-language context cancellation for WASM/WIT components

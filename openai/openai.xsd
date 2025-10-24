@@ -27,9 +27,9 @@
                 /&gt; MODE 2 - Content Generation: LLM generates text stored in data model -
                 location: REQUIRED - Example: &lt;openai:generate model="gpt-4" prompt="Summarize:
                 {{.text}}" location="summary" /&gt; REQUIREMENTS: - model OR modelexpr (required) -
-                prompt OR promptexpr OR child &lt;prompt&gt; elements (required) - Multiple prompt
-                sources concatenated: prompt + promptexpr + child prompts (in order) TEMPLATE SYNTAX
-                (Go templates): - {{.var}} - variable access - {{.obj.field}} - nested field - {{if
+                prompt OR promptexpr OR child &lt;prompt&gt; elements (required) - retry: optional
+                (default 3) - maximum retries for schema validation failures TEMPLATE SYNTAX (Go
+                templates): - {{.var}} - variable access - {{.obj.field}} - nested field - {{if
                 .cond}}...{{end}} - conditional - {{range .items}}...{{end}} - iteration </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -96,6 +96,22 @@
                     <xs:documentation> Enable incremental streaming. Default: false true: lower
                         latency, incremental updates, higher overhead (use for interactive) false:
                         single response, lower overhead (use for batch) </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="retry" type="xs:int" default="3">
+                <xs:annotation>
+                    <xs:documentation> Maximum number of retries for schema validation failures.
+                        When tool call arguments fail schema validation, the model will be given
+                        feedback and allowed to retry up to this many times. Default: 3 </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
+            <xs:attribute name="reasoning" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation> Reasoning effort for o1 models. Controls how much time the model
+                        spends thinking before responding. Values: "low" | "medium" | "high". Default: none
+                        (model default). Only applies to o1 series models. </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 

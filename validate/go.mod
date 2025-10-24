@@ -5,7 +5,7 @@ go 1.24.5
 require (
 	github.com/agentflare-ai/agentml-go v0.1.0-beta.1
 	github.com/agentflare-ai/agentmlx v0.1.0-beta.11
-	github.com/agentflare-ai/go-xmldom v0.1.0
+	github.com/agentflare-ai/go-xmldom v0.1.1
 	go.opentelemetry.io/otel v1.38.0
 )
 

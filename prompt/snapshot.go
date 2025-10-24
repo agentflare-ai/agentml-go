@@ -88,15 +88,16 @@ var (
 
 	// Core structural elements to preserve
 	structuralElements = map[string]bool{
-		"agentml":    true,
-		"scxml":      true,
-		"state":      true,
-		"parallel":   true,
-		"transition": true,
-		"initial":    true,
-		"final":      true,
-		"history":    true,
-		"invoke":     true, // Keep invoke structure but remove its finalize
+		"agentml":     true,
+		"scxml":       true,
+		"state":       true,
+		"parallel":    true,
+		"transition":  true,
+		"initial":     true,
+		"final":       true,
+		"history":     true,
+		"invoke":      true, // Keep invoke structure but remove its finalize
+		"description": true, // Keep agent description for context
 	}
 )
 

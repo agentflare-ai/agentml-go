@@ -7,6 +7,9 @@ import (
 
 	"github.com/agentflare-ai/agentml-go/prompt"
 	"github.com/agentflare-ai/go-xmldom"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/packages/param"
+	"github.com/openai/openai-go/shared"
 )
 
 func TestDynamicToolBuilding_Integration(t *testing.T) {
@@ -57,12 +60,12 @@ func TestDynamicToolBuilding_Integration(t *testing.T) {
 
 	// Verify expected functions
 	expectedFunctions := map[string]bool{
-		"send_user.request":   false,
-		"send_system.shutdown": false,
-		"send_task.complete":  false,
-		"send_task.failed":    false,
-		"send_retry.request":  false,
-		"send_cancel.request": false,
+		"send_user_request":    false,
+		"send_system_shutdown": false,
+		"send_task_complete":   false,
+		"send_task_failed":     false,
+		"send_retry_request":   false,
+		"send_cancel_request":  false,
 	}
 
 	t.Log("\nSend functions:")
@@ -105,7 +108,7 @@ func TestDynamicToolBuilding_Integration(t *testing.T) {
 
 	t.Log("\nOpenAI Tools and Mappings:")
 	for i, tool := range tools {
-		funcName := tool.Function.Value.Name.Value
+		funcName := tool.Function.Name
 		originalEvent := mapping[funcName]
 		expectedOriginal, ok := expectedMappings[funcName]
 
@@ -210,7 +213,7 @@ func TestDynamicToolBuilding_StateTransitions(t *testing.T) {
 			// Verify each expected tool exists
 			foundTools := make(map[string]bool)
 			for _, tool := range tools {
-				funcName := tool.Function.Value.Name.Value
+				funcName := tool.Function.Name
 				foundTools[funcName] = true
 				t.Logf("  Tool: %s -> %s", funcName, mapping[funcName])
 			}
@@ -286,13 +289,13 @@ func TestSchemaAttribute_ActualContentParsing(t *testing.T) {
 	// Find and verify the user.request schema
 	var userRequestFunc *prompt.SendFunction
 	for i := range sendFunctions {
-		if sendFunctions[i].Name == "send_user.request" {
+		if sendFunctions[i].Name == "send_user_request" {
 			userRequestFunc = &sendFunctions[i]
 			break
 		}
 	}
 	if userRequestFunc == nil {
-		t.Fatal("send_user.request function not found")
+		t.Fatal("send_user_request function not found")
 	}
 
 	if userRequestFunc.Schema == nil || userRequestFunc.Schema.Properties["data"] == nil {
@@ -333,13 +336,13 @@ func TestSchemaAttribute_ActualContentParsing(t *testing.T) {
 	// Find and verify task.complete schema
 	var taskCompleteFunc *prompt.SendFunction
 	for i := range sendFunctions {
-		if sendFunctions[i].Name == "send_task.complete" {
+		if sendFunctions[i].Name == "send_task_complete" {
 			taskCompleteFunc = &sendFunctions[i]
 			break
 		}
 	}
 	if taskCompleteFunc == nil {
-		t.Fatal("send_task.complete function not found")
+		t.Fatal("send_task_complete function not found")
 	}
 
 	if taskCompleteFunc.Schema == nil || taskCompleteFunc.Schema.Properties["data"] == nil {
@@ -379,13 +382,13 @@ func TestSchemaAttribute_ActualContentParsing(t *testing.T) {
 	// Find and verify task.failed schema
 	var taskFailedFunc *prompt.SendFunction
 	for i := range sendFunctions {
-		if sendFunctions[i].Name == "send_task.failed" {
+		if sendFunctions[i].Name == "send_task_failed" {
 			taskFailedFunc = &sendFunctions[i]
 			break
 		}
 	}
 	if taskFailedFunc == nil {
-		t.Fatal("send_task.failed function not found")
+		t.Fatal("send_task_failed function not found")
 	}
 
 	if taskFailedFunc.Schema == nil || taskFailedFunc.Schema.Properties["data"] == nil {
@@ -418,13 +421,13 @@ func TestSchemaAttribute_ActualContentParsing(t *testing.T) {
 	// Verify events without schemas don't have data properties
 	var shutdownFunc *prompt.SendFunction
 	for i := range sendFunctions {
-		if sendFunctions[i].Name == "send_system.shutdown" {
+		if sendFunctions[i].Name == "send_system_shutdown" {
 			shutdownFunc = &sendFunctions[i]
 			break
 		}
 	}
 	if shutdownFunc == nil {
-		t.Fatal("send_system.shutdown function not found")
+		t.Fatal("send_system_shutdown function not found")
 	}
 
 	if shutdownFunc.Schema != nil && shutdownFunc.Schema.Properties["data"] != nil {
@@ -458,7 +461,7 @@ func TestOpenAIToolSchemaConversion(t *testing.T) {
 	// Find the user_request tool
 	var userRequestToolIdx = -1
 	for i := range tools {
-		if tools[i].Function.Value.Name.Value == "send_user_request" {
+		if tools[i].Function.Name == "send_user_request" {
 			userRequestToolIdx = i
 			break
 		}
@@ -474,7 +477,7 @@ func TestOpenAIToolSchemaConversion(t *testing.T) {
 	}
 
 	// Extract parameters
-	params := userRequestTool.Function.Value.Parameters.Value
+	params := userRequestTool.Function.Parameters
 	t.Logf("Tool parameters: %+v", params)
 
 	// Verify it's an object type
@@ -586,7 +589,7 @@ func TestOpenAIToolSchemaConversion(t *testing.T) {
 	// Find and verify task_complete tool
 	var taskCompleteToolIdx = -1
 	for i := range tools {
-		if tools[i].Function.Value.Name.Value == "send_task_complete" {
+		if tools[i].Function.Name == "send_task_complete" {
 			taskCompleteToolIdx = i
 			break
 		}
@@ -596,7 +599,7 @@ func TestOpenAIToolSchemaConversion(t *testing.T) {
 	}
 	taskCompleteTool := &tools[taskCompleteToolIdx]
 
-	taskParams := taskCompleteTool.Function.Value.Parameters.Value
+	taskParams := taskCompleteTool.Function.Parameters
 	taskProps := taskParams["properties"].(map[string]any)
 	taskData := taskProps["data"].(map[string]any)
 	taskDataProps := taskData["properties"].(map[string]any)
@@ -621,7 +624,7 @@ func TestOpenAIToolSchemaConversion(t *testing.T) {
 	// Verify task.failed has boolean type
 	var taskFailedToolIdx = -1
 	for i := range tools {
-		if tools[i].Function.Value.Name.Value == "send_task_failed" {
+		if tools[i].Function.Name == "send_task_failed" {
 			taskFailedToolIdx = i
 			break
 		}
@@ -631,7 +634,7 @@ func TestOpenAIToolSchemaConversion(t *testing.T) {
 	}
 	taskFailedTool := &tools[taskFailedToolIdx]
 
-	failedParams := taskFailedTool.Function.Value.Parameters.Value
+	failedParams := taskFailedTool.Function.Parameters
 	failedProps := failedParams["properties"].(map[string]any)
 	failedData := failedProps["data"].(map[string]any)
 	failedDataProps := failedData["properties"].(map[string]any)
@@ -673,7 +676,7 @@ func TestOpenAIToolSchemaConversion_ArrayWithoutItems(t *testing.T) {
 	}
 
 	tool := &tools[0]
-	params := tool.Function.Value.Parameters.Value
+	params := tool.Function.Parameters
 	props := params["properties"].(map[string]any)
 	dataProps := props["data"].(map[string]any)
 	dataProperties := dataProps["properties"].(map[string]any)
@@ -724,4 +727,122 @@ func TestOpenAIToolSchemaConversion_ArrayWithoutItems(t *testing.T) {
 	}
 
 	t.Log("=== Array Schema Handling Complete ===")
+}
+
+func TestConvertChatToolsToResponseTools(t *testing.T) {
+	t.Run("converts ChatCompletionToolParam to ToolUnionParam", func(t *testing.T) {
+		// Create sample ChatCompletionToolParam
+		chatTools := []openai.ChatCompletionToolParam{
+			{
+				Function: shared.FunctionDefinitionParam{
+					Name:        "send_user_request",
+					Description: param.NewOpt("Send a user request event"),
+					Parameters: shared.FunctionParameters{
+						"type": "object",
+						"properties": map[string]any{
+							"target": map[string]any{
+								"type":        "string",
+								"description": "Target destination for the event",
+							},
+							"delay": map[string]any{
+								"type":        "string",
+								"description": "Delay before sending the event",
+							},
+							"data": map[string]any{
+								"type":        "object",
+								"description": "Event-specific data payload",
+							},
+						},
+					},
+				},
+			},
+			{
+				Function: shared.FunctionDefinitionParam{
+					Name:        "send_task_complete",
+					Description: param.NewOpt("Send a task completion event"),
+					Parameters:  shared.FunctionParameters{}, // Empty parameters
+				},
+			},
+		}
+
+		// Convert to Response tools
+		responseTools := convertChatToolsToResponseTools(chatTools)
+
+		// Verify conversion
+		if len(responseTools) != 2 {
+			t.Fatalf("Expected 2 response tools, got %d", len(responseTools))
+		}
+
+		// Check first tool
+		firstTool := responseTools[0]
+		if firstTool.GetName() == nil || *firstTool.GetName() != "send_user_request" {
+			t.Errorf("Expected first tool name 'send_user_request', got %v", firstTool.GetName())
+		}
+
+		if firstTool.GetParameters() == nil {
+			t.Error("Expected parameters for first tool")
+		} else {
+			params := firstTool.GetParameters()
+			if props, ok := params["properties"].(map[string]any); !ok {
+				t.Error("Expected properties in parameters")
+			} else {
+				if _, hasTarget := props["target"]; !hasTarget {
+					t.Error("Expected 'target' property")
+				}
+				if _, hasDelay := props["delay"]; !hasDelay {
+					t.Error("Expected 'delay' property")
+				}
+				if _, hasData := props["data"]; !hasData {
+					t.Error("Expected 'data' property")
+				}
+			}
+		}
+
+		// Check second tool
+		secondTool := responseTools[1]
+		if secondTool.GetName() == nil || *secondTool.GetName() != "send_task_complete" {
+			t.Errorf("Expected second tool name 'send_task_complete', got %v", secondTool.GetName())
+		}
+
+		// Verify strict mode is false (as set in conversion)
+		if firstTool.GetStrict() == nil || *firstTool.GetStrict() != false {
+			t.Errorf("Expected strict=false for first tool, got %v", firstTool.GetStrict())
+		}
+		if secondTool.GetStrict() == nil || *secondTool.GetStrict() != false {
+			t.Errorf("Expected strict=false for second tool, got %v", secondTool.GetStrict())
+		}
+
+		t.Log("✓ Tool conversion test passed")
+	})
+
+	t.Run("handles nil parameters", func(t *testing.T) {
+		chatTools := []openai.ChatCompletionToolParam{
+			{
+				Function: shared.FunctionDefinitionParam{
+					Name:        "test_tool",
+					Description: param.NewOpt("Test tool with nil parameters"),
+					Parameters:  nil, // Explicitly nil
+				},
+			},
+		}
+
+		responseTools := convertChatToolsToResponseTools(chatTools)
+
+		if len(responseTools) != 1 {
+			t.Fatalf("Expected 1 response tool, got %d", len(responseTools))
+		}
+
+		tool := responseTools[0]
+		if tool.GetParameters() == nil {
+			t.Error("Expected empty parameters map even when input is nil")
+		}
+	})
+
+	t.Run("empty input returns empty output", func(t *testing.T) {
+		responseTools := convertChatToolsToResponseTools([]openai.ChatCompletionToolParam{})
+
+		if len(responseTools) != 0 {
+			t.Errorf("Expected empty slice for empty input, got %d tools", len(responseTools))
+		}
+	})
 }

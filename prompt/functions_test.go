@@ -25,7 +25,7 @@ func TestBuildSendFunctions(t *testing.T) {
 </scxml>`,
 			expected: []SendFunction{
 				{
-					Name:        "send_user.request",
+					Name:        "send_user_request",
 					Description: "Send event 'user.request' through the SCXML interpreter",
 				},
 			},
@@ -45,11 +45,11 @@ func TestBuildSendFunctions(t *testing.T) {
 </scxml>`,
 			expected: []SendFunction{
 				{
-					Name:        "send_user.request",
+					Name:        "send_user_request",
 					Description: "Send event 'user.request' through the SCXML interpreter",
 				},
 				{
-					Name:        "send_system.error",
+					Name:        "send_system_error",
 					Description: "Send event 'system.error' through the SCXML interpreter",
 				},
 				{
@@ -78,11 +78,11 @@ func TestBuildSendFunctions(t *testing.T) {
 </scxml>`,
 			expected: []SendFunction{
 				{
-					Name:        "send_user.request",
+					Name:        "send_user_request",
 					Description: "Send event 'user.request' through the SCXML interpreter",
 				},
 				{
-					Name:        "send_other.event",
+					Name:        "send_other_event",
 					Description: "Send event 'other.event' through the SCXML interpreter",
 				},
 			},
@@ -98,7 +98,7 @@ func TestBuildSendFunctions(t *testing.T) {
 </scxml>`,
 			expected: []SendFunction{
 				{
-					Name:        "send_valid.event",
+					Name:        "send_valid_event",
 					Description: "Send event 'valid.event' through the SCXML interpreter",
 				},
 			},
@@ -114,7 +114,7 @@ func TestBuildSendFunctions(t *testing.T) {
 </scxml>`,
 			expected: []SendFunction{
 				{
-					Name:        "send_valid.event",
+					Name:        "send_valid_event",
 					Description: "Send event 'valid.event' through the SCXML interpreter",
 				},
 			},
@@ -131,12 +131,12 @@ func TestBuildSendFunctions(t *testing.T) {
 </scxml>`,
 			expected: []SendFunction{
 				{
-					Name:        "send_user.request",
+					Name:        "send_user_request",
 					Description: "Send event 'user.request' through the SCXML interpreter",
 					// Schema should have data property when event:schema is present
 				},
 				{
-					Name:        "send_simple.event",
+					Name:        "send_simple_event",
 					Description: "Send event 'simple.event' through the SCXML interpreter",
 				},
 			},
@@ -258,13 +258,13 @@ func TestBuildSendFunctions_ComplexEventNames(t *testing.T) {
 		eventName    string
 		expectedName string
 	}{
-		{"user.request", "send_user.request"},
-		{"task.complete.success", "send_task.complete.success"},
+		{"user.request", "send_user_request"},
+		{"task.complete.success", "send_task_complete_success"},
 		{"event_with_underscore", "send_event_with_underscore"},
 		{"event-with-hyphen", "send_event-with-hyphen"},
 		{"CamelCaseEvent", "send_CamelCaseEvent"},
 		{"event123", "send_event123"},
-		{"event.123.test", "send_event.123.test"},
+		{"event.123.test", "send_event_123_test"},
 	}
 
 	for _, tc := range testCases {
@@ -309,10 +309,10 @@ func TestBuildSendFunctions_ComplexEventNames(t *testing.T) {
 func TestBuildSendFunctions_SchemaJSONParsing(t *testing.T) {
 	// Test that JSON schemas are correctly parsed from schema attributes
 	tests := []struct {
-		name           string
-		xml            string
-		expectedEvent  string
-		verifySchema   func(t *testing.T, schema *jsonschema.Schema)
+		name          string
+		xml           string
+		expectedEvent string
+		verifySchema  func(t *testing.T, schema *jsonschema.Schema)
 	}{
 		{
 			name: "Simple schema with single property",
@@ -331,6 +331,10 @@ func TestBuildSendFunctions_SchemaJSONParsing(t *testing.T) {
 				}
 				if len(schema.Properties) != 1 {
 					t.Fatalf("Expected 1 property in root schema, got %d", len(schema.Properties))
+				}
+				// Check that "data" is marked as required at the top level since data schema has required fields
+				if len(schema.Required) != 1 || schema.Required[0] != "data" {
+					t.Errorf("Expected top-level required=['data'], got %v", schema.Required)
 				}
 				dataSchema, ok := schema.Properties["data"]
 				if !ok {
@@ -366,6 +370,10 @@ func TestBuildSendFunctions_SchemaJSONParsing(t *testing.T) {
 </scxml>`,
 			expectedEvent: "task.complete",
 			verifySchema: func(t *testing.T, schema *jsonschema.Schema) {
+				// Check that "data" is marked as required at the top level since data schema has required fields
+				if len(schema.Required) != 1 || schema.Required[0] != "data" {
+					t.Errorf("Expected top-level required=['data'], got %v", schema.Required)
+				}
 				dataSchema := schema.Properties["data"]
 				if len(dataSchema.Properties) != 3 {
 					t.Fatalf("Expected 3 properties in data schema, got %d", len(dataSchema.Properties))
@@ -503,7 +511,7 @@ func TestBuildSendFunctions_SchemaJSONParsing(t *testing.T) {
 			}
 
 			fn := functions[0]
-			expectedName := "send_" + tt.expectedEvent
+			expectedName := "send_" + strings.ReplaceAll(tt.expectedEvent, ".", "_")
 			if fn.Name != expectedName {
 				t.Errorf("Expected name '%s', got '%s'", expectedName, fn.Name)
 			}

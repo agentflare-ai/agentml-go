@@ -2,8 +2,7 @@ github.com/agentflare-ai/agentml-go v0.1.0-beta.1 h1:Nwqlpt/M5wiajsvq7qXT9rPx8Nv
 github.com/agentflare-ai/agentml-go v0.1.0-beta.1/go.mod h1:+ufeqnDXEmZg/KjFfkQu8fyRrDxHp8BHt1c42rx91Yk=
 github.com/agentflare-ai/agentmlx v0.1.0-beta.11 h1:4K8H47tjQm/2lVnHEdQswIN7svddJJyvxrcrd6d8IfU=
 github.com/agentflare-ai/agentmlx v0.1.0-beta.11/go.mod h1:FtPhw82uYqcMHEfV8RZDe77wgMiKu7BG1zrBViT708o=
-github.com/agentflare-ai/go-xmldom v0.1.0 h1:nVLKAcnFbl27OsZwGyLzkNJhQom1UjhdcXabuAQOEiA=
-github.com/agentflare-ai/go-xmldom v0.1.0/go.mod h1:Gj7LvvY3Dc2j3rp5zEXsZenOFioDK53K29x/8tIPB0Q=
+github.com/agentflare-ai/go-xmldom v0.1.1 h1:lwep30KcIkJfS7mzEawVRDcqzdxM5VFLE8OMqLzPc5Q=
 github.com/agentflare-ai/go-xsd v0.1.2 h1:o/9aW7GfDxEpQBqEkeD3Whedqa+LJqvxAa3OKISF9g0=
 github.com/agentflare-ai/go-xsd v0.1.2/go.mod h1:KCKZ4c5r29WwuHlt+7cOezjhzRsgb31+REpQwNKTO1w=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
