@@ -2,18 +2,53 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
     targetNamespace="github.com/agentflare-ai/agentml-go/memory"
     xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
+    xmlns:agentml="github.com/agentflare-ai/agentml"
     elementFormDefault="qualified">
+
+    <xs:import namespace="github.com/agentflare-ai/agentml"
+        schemaLocation="https://xsd.agentml.dev/agentflare-ai/agentml/agentml.xsd" />
+
+    <!-- Common attribute group for selecting a database by id -->
+    <xs:attributeGroup name="dbRef">
+        <xs:annotation>
+            <xs:documentation>Optional database selector. Required at runtime when used outside a memory:db block; omitted inside a memory:db block defaults to that block's id.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="db" type="xs:string" />
+    </xs:attributeGroup>
+
+    <!-- Database declaration (root-only by convention) -->
+    <xs:element name="db">
+        <xs:annotation>
+            <xs:documentation>
+                Declare a database by id with optional DSN or DSN expression.
+                Placement: root-only by convention (schema cannot enforce).
+                Evaluation: dsnexpr is evaluated at first use, after datamodel and scripts execute.
+                Children: may contain memory:* elements; within this block, child elements may omit the db attribute.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <!-- Allow any memory:* elements inside for scoping db by ancestry -->
+                <xs:any namespace="##targetNamespace" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="dsn" type="xs:string" />
+            <xs:attribute name="dsnexpr" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
 
     <!-- Key-Value Store Operations -->
 
-    <xs:element name="close">
+    <xs:element name="close" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Close the memory database connection</xs:documentation>
         </xs:annotation>
-        <xs:complexType />
+        <xs:complexType>
+            <xs:attributeGroup ref="dbRef" />
+        </xs:complexType>
     </xs:element>
 
-    <xs:element name="put">
+    <xs:element name="put" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Store a key-value pair in the memory store</xs:documentation>
         </xs:annotation>
@@ -22,10 +57,11 @@
             <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="value" type="xs:string" />
             <xs:attribute name="valueexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="get">
+    <xs:element name="get" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Retrieve a value from the memory store by key</xs:documentation>
         </xs:annotation>
@@ -34,20 +70,22 @@
             <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="delete">
+    <xs:element name="delete" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Delete a key-value pair from the memory store</xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="key" type="xs:string" />
             <xs:attribute name="keyexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="copy">
+    <xs:element name="copy" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Copy a value from one key to another</xs:documentation>
         </xs:annotation>
@@ -60,10 +98,11 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="dstkey" type="xs:string" />
             <xs:attribute name="dstkeyexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="move">
+    <xs:element name="move" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Move a value from one key to another (atomic operation)</xs:documentation>
         </xs:annotation>
@@ -76,10 +115,11 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="dstkey" type="xs:string" />
             <xs:attribute name="dstkeyexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="query">
+    <xs:element name="query" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Execute a SQL query on the memory database</xs:documentation>
         </xs:annotation>
@@ -90,62 +130,73 @@
             <xs:attribute name="queryexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="kvtruncate">
+    <xs:element name="kvtruncate" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Delete all key-value pairs from the memory store</xs:documentation>
         </xs:annotation>
-        <xs:complexType />
+        <xs:complexType>
+            <xs:attributeGroup ref="dbRef" />
+        </xs:complexType>
     </xs:element>
 
     <!-- Transaction Operations -->
 
-    <xs:element name="begin">
+    <xs:element name="begin" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Begin a database transaction</xs:documentation>
         </xs:annotation>
-        <xs:complexType />
+        <xs:complexType>
+            <xs:attributeGroup ref="dbRef" />
+        </xs:complexType>
     </xs:element>
 
-    <xs:element name="commit">
+    <xs:element name="commit" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Commit the current transaction</xs:documentation>
         </xs:annotation>
-        <xs:complexType />
+        <xs:complexType>
+            <xs:attributeGroup ref="dbRef" />
+        </xs:complexType>
     </xs:element>
 
-    <xs:element name="rollback">
+    <xs:element name="rollback" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Rollback the current transaction</xs:documentation>
         </xs:annotation>
-        <xs:complexType />
+        <xs:complexType>
+            <xs:attributeGroup ref="dbRef" />
+        </xs:complexType>
     </xs:element>
 
-    <xs:element name="savepoint">
+    <xs:element name="savepoint" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Create a savepoint within a transaction</xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="name" type="xs:string" />
             <xs:attribute name="nameexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="release">
+    <xs:element name="release" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Release a savepoint</xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="name" type="xs:string" />
             <xs:attribute name="nameexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
     <!-- SQL Operations -->
 
-    <xs:element name="sql">
+    <xs:element name="sql" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Execute arbitrary SQL statements</xs:documentation>
         </xs:annotation>
@@ -154,10 +205,11 @@
             <xs:attribute name="sqlexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="exec">
+    <xs:element name="exec" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Execute arbitrary SQL statements (alias for sql)</xs:documentation>
         </xs:annotation>
@@ -166,12 +218,13 @@
             <xs:attribute name="sqlexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
     <!-- Vector/Embedding Operations -->
 
-    <xs:element name="embed">
+    <xs:element name="embed" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Generate an embedding vector from text</xs:documentation>
         </xs:annotation>
@@ -183,10 +236,11 @@
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="key" type="xs:string" />
             <xs:attribute name="keyexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="upsertvector">
+    <xs:element name="upsertvector" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Insert or update a vector in the vector store</xs:documentation>
         </xs:annotation>
@@ -195,10 +249,11 @@
             <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="vector" type="xs:string" />
             <xs:attribute name="vectorexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="search">
+    <xs:element name="search" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Search for similar vectors using semantic similarity</xs:documentation>
         </xs:annotation>
@@ -210,29 +265,33 @@
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="topk" type="xs:integer" />
             <xs:attribute name="topkexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="deletevector">
+    <xs:element name="deletevector" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Delete a vector from the vector store</xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="key" type="xs:string" />
             <xs:attribute name="keyexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="vectorindex">
+    <xs:element name="vectorindex" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Initialize or manage vector index (auto-initialized)</xs:documentation>
         </xs:annotation>
-        <xs:complexType />
+        <xs:complexType>
+            <xs:attributeGroup ref="dbRef" />
+        </xs:complexType>
     </xs:element>
 
     <!-- Graph Operations -->
 
-    <xs:element name="addnode">
+    <xs:element name="addnode" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Add a new node to the knowledge graph</xs:documentation>
         </xs:annotation>
@@ -242,10 +301,11 @@
             <xs:attribute name="props" type="xs:string" />
             <xs:attribute name="propsexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="addedge">
+    <xs:element name="addedge" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Add a new edge/relationship between nodes in the graph</xs:documentation>
         </xs:annotation>
@@ -258,10 +318,11 @@
             <xs:attribute name="relexpr" type="xs:string" />
             <xs:attribute name="props" type="xs:string" />
             <xs:attribute name="propsexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="getnode">
+    <xs:element name="getnode" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Retrieve a node from the graph by ID</xs:documentation>
         </xs:annotation>
@@ -269,10 +330,11 @@
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="getedge">
+    <xs:element name="getedge" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Retrieve an edge from the graph by ID</xs:documentation>
         </xs:annotation>
@@ -281,20 +343,22 @@
             <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="deletenode">
+    <xs:element name="deletenode" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Delete a node from the graph</xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="idexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="deleteedge">
+    <xs:element name="deleteedge" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Delete an edge from the graph</xs:documentation>
         </xs:annotation>
@@ -305,10 +369,11 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="rel" type="xs:string" />
             <xs:attribute name="relexpr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="neighbors">
+    <xs:element name="neighbors" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Get neighboring nodes in the graph (alias for getneighbors)</xs:documentation>
         </xs:annotation>
@@ -318,10 +383,11 @@
             <xs:attribute name="direction" type="xs:string" />
             <xs:attribute name="directionexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="getneighbors">
+    <xs:element name="getneighbors" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Get neighboring nodes in the graph</xs:documentation>
         </xs:annotation>
@@ -331,10 +397,11 @@
             <xs:attribute name="direction" type="xs:string" />
             <xs:attribute name="directionexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="graphpath">
+    <xs:element name="graphpath" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Find a path between two nodes in the graph</xs:documentation>
         </xs:annotation>
@@ -345,29 +412,33 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="graphtruncate">
+    <xs:element name="graphtruncate" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Delete all nodes and edges from the graph</xs:documentation>
         </xs:annotation>
-        <xs:complexType />
+        <xs:complexType>
+            <xs:attributeGroup ref="dbRef" />
+        </xs:complexType>
     </xs:element>
 
-    <xs:element name="graphquery">
+    <xs:element name="graphquery" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Execute a graph query</xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="pathexpr" type="xs:string" use="required" />
             <xs:attribute name="location" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 
     <!-- Legacy Graph Element (for backward compatibility) -->
 
-    <xs:element name="graph">
+    <xs:element name="graph" substitutionGroup="agentml:executable">
         <xs:annotation>
             <xs:documentation>Legacy graph operations (use dedicated elements like addnode, addedge
                 instead)</xs:documentation>
@@ -382,6 +453,7 @@
             <xs:attribute name="type" type="xs:string" />
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="query-expr" type="xs:string" />
+            <xs:attributeGroup ref="dbRef" />
         </xs:complexType>
     </xs:element>
 

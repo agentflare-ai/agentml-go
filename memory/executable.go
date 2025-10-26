@@ -1,3 +1,6 @@
+//go:build none
+// +build none
+
 package memory
 
 import (

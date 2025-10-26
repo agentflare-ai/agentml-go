@@ -39,6 +39,29 @@ go get github.com/agentflare-ai/agentml/memory
 
 ## Quick Start
 
+### AgentML DB declaration and routing
+
+```xml
+<agentml xmlns="github.com/agentflare-ai/agentml"
+         xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
+  <!-- Declare a database (root-only by convention); dsnexpr is evaluated at first use -->
+  <memory:db id="foo" dsnexpr="dsn"/>
+
+  <state id="s"><onentry>
+    <!-- Use db outside the block -->
+    <memory:put db="foo" key="k" value="v"/>
+    <memory:get db="foo" key="k" location="out"/>
+  </onentry></state>
+</agentml>
+```
+
+Rules:
+- All memory:* elements (except memory:db) accept optional `db=""`.
+- Inside a `<memory:db>` block, child memory:* can omit `db` and will target that block's id.
+- If exactly one `<memory:db>` is declared, omitting `db` defaults to that id.
+- If none declared, an implicit in-memory DB is created on first use.
+- If multiple are declared and `db` is omitted, execution fails as ambiguous.
+
 ```go
 package main
 

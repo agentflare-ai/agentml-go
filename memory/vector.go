@@ -3,7 +3,9 @@ package memory
 import (
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"fmt"
+	"sort"
 	"unsafe"
 
 	"github.com/agentflare-ai/go-jsonschema"
@@ -118,9 +120,10 @@ var (
 
 // VectorDB represents a vector database for embeddings
 type VectorDB struct {
-	db         *sql.DB
-	tableName  string
-	dimensions int
+	db          *sql.DB
+	tableName   string
+	dimensions  int
+	vtAvailable bool
 }
 
 // VectorResult represents a vector search result
@@ -142,12 +145,18 @@ func NewVectorDB(ctx context.Context, db *sql.DB, tableName string, dimensions i
 		vs.tableName = "vectors"
 	}
 
-	// Create the virtual table using the vec extension
+	// Try to create the virtual table using the vec extension
 	query := fmt.Sprintf("CREATE VIRTUAL TABLE IF NOT EXISTS %s USING vec0(embedding float[%d])", vs.tableName, dimensions)
 	if _, err := vs.db.ExecContext(ctx, query); err != nil {
-		return nil, fmt.Errorf("failed to create vector table: %w", err)
+		// Fallback: use a regular table with BLOB storage if vec extension is unavailable
+		fallback := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(rowid INTEGER PRIMARY KEY, embedding BLOB)", vs.tableName)
+		if _, err2 := vs.db.ExecContext(ctx, fallback); err2 != nil {
+			return nil, fmt.Errorf("failed to create vector table (fallback): %w (original: %v)", err2, err)
+		}
+		vs.vtAvailable = false
+		return vs, nil
 	}
-
+	vs.vtAvailable = true
 	return vs, nil
 }
 
@@ -167,13 +176,19 @@ func (vs *VectorDB) InsertVector(ctx context.Context, id uint64, vector []float3
 		vectorBytes[i*4+3] = byte(bits >> 24)
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s(rowid, embedding) VALUES (?, ?)", vs.tableName)
 	rowid := int64(id)
-	_, err := vs.db.ExecContext(ctx, query, rowid, vectorBytes)
-	if err != nil {
-		return fmt.Errorf("failed to insert vector: %w", err)
+	if vs.vtAvailable {
+		query := fmt.Sprintf("INSERT INTO %s(rowid, embedding) VALUES (?, ?)", vs.tableName)
+		if _, err := vs.db.ExecContext(ctx, query, rowid, vectorBytes); err != nil {
+			return fmt.Errorf("failed to insert vector: %w", err)
+		}
+		return nil
 	}
-
+	// Fallback: use INSERT OR REPLACE on regular table
+	query := fmt.Sprintf("INSERT OR REPLACE INTO %s(rowid, embedding) VALUES (?, ?)", vs.tableName)
+	if _, err := vs.db.ExecContext(ctx, query, rowid, vectorBytes); err != nil {
+		return fmt.Errorf("failed to insert vector (fallback): %w", err)
+	}
 	return nil
 }
 
@@ -183,49 +198,103 @@ func (vs *VectorDB) SearchSimilarVectors(ctx context.Context, queryVector []floa
 		return nil, fmt.Errorf("query vector dimension mismatch: expected %d, got %d", vs.dimensions, len(queryVector))
 	}
 
-	// Convert query vector to bytes
-	queryBytes := make([]byte, len(queryVector)*4)
-	for i, f := range queryVector {
-		bits := *(*uint32)(unsafe.Pointer(&f))
-		queryBytes[i*4] = byte(bits)
-		queryBytes[i*4+1] = byte(bits >> 8)
-		queryBytes[i*4+2] = byte(bits >> 16)
-		queryBytes[i*4+3] = byte(bits >> 24)
+	if vs.vtAvailable {
+		// Convert query vector to bytes
+		queryBytes := make([]byte, len(queryVector)*4)
+		for i, f := range queryVector {
+			bits := *(*uint32)(unsafe.Pointer(&f))
+			queryBytes[i*4] = byte(bits)
+			queryBytes[i*4+1] = byte(bits >> 8)
+			queryBytes[i*4+2] = byte(bits >> 16)
+			queryBytes[i*4+3] = byte(bits >> 24)
+		}
+
+		query := fmt.Sprintf(`
+			SELECT rowid, distance 
+			FROM %s 
+			WHERE embedding MATCH ? 
+			ORDER BY distance 
+			LIMIT ?
+		`, vs.tableName)
+
+		rows, err := vs.db.QueryContext(ctx, query, queryBytes, limit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to search vectors: %w", err)
+		}
+		defer rows.Close()
+
+		var results []VectorResult
+		for rows.Next() {
+			var id int64
+			var distance float64
+			if err := rows.Scan(&id, &distance); err != nil {
+				continue
+			}
+
+			results = append(results, VectorResult{
+				ID:       id,
+				Distance: distance,
+			})
+		}
+
+		return results, nil
 	}
 
-	query := fmt.Sprintf(`
-		SELECT rowid, distance 
-		FROM %s 
-		WHERE embedding MATCH ? 
-		ORDER BY distance 
-		LIMIT ?
-	`, vs.tableName)
-
-	rows, err := vs.db.QueryContext(ctx, query, queryBytes, limit)
+	// Fallback: brute-force scan using Go distance computation
+	rows, err := vs.db.QueryContext(ctx, fmt.Sprintf("SELECT rowid, embedding FROM %s", vs.tableName))
 	if err != nil {
-		return nil, fmt.Errorf("failed to search vectors: %w", err)
+		return nil, fmt.Errorf("failed to search vectors (fallback): %w", err)
 	}
 	defer rows.Close()
 
-	var results []VectorResult
+	tmp := make([]struct{ id int64; dist float64 }, 0, 128)
 	for rows.Next() {
 		var id int64
-		var distance float64
-		if err := rows.Scan(&id, &distance); err != nil {
+		var blob []byte
+		if err := rows.Scan(&id, &blob); err != nil {
 			continue
 		}
-
-		results = append(results, VectorResult{
-			ID:       id,
-			Distance: distance,
-		})
+		vec, err := decodeFloat32Blob(blob)
+		if err != nil || len(vec) != vs.dimensions {
+			continue
+		}
+		// Euclidean distance
+		var d float64
+		for i := 0; i < vs.dimensions; i++ {
+			dx := float64(vec[i]) - float64(queryVector[i])
+			d += dx * dx
+		}
+		tmp = append(tmp, struct{ id int64; dist float64 }{id: id, dist: d})
 	}
 
-	return results, nil
+	sort.Slice(tmp, func(i, j int) bool { return tmp[i].dist < tmp[j].dist })
+	if limit > len(tmp) {
+		limit = len(tmp)
+	}
+	out := make([]VectorResult, 0, limit)
+	for i := 0; i < limit; i++ {
+		out = append(out, VectorResult{ID: tmp[i].id, Distance: tmp[i].dist})
+	}
+	return out, nil
 }
 
 // Close closes the vector store (does not close the underlying database connection)
 func (vs *VectorDB) Close() error {
 	// Nothing to close for now, as we don't own the database connection
 	return nil
+}
+
+// decodeFloat32Blob decodes a little-endian byte slice into a float32 slice.
+func decodeFloat32Blob(b []byte) ([]float32, error) {
+	if len(b)%4 != 0 {
+		return nil, fmt.Errorf("invalid vector blob length: %d", len(b))
+	}
+	n := len(b) / 4
+	out := make([]float32, n)
+	for i := 0; i < n; i++ {
+		bits := binary.LittleEndian.Uint32(b[i*4 : i*4+4])
+		f := *(*float32)(unsafe.Pointer(&bits))
+		out[i] = f
+	}
+	return out, nil
 }
