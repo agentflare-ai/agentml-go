@@ -11,7 +11,8 @@
     <!-- Common attribute group for selecting a database by id -->
     <xs:attributeGroup name="dbRef">
         <xs:annotation>
-            <xs:documentation>Optional database selector. Required at runtime when used outside a memory:db block; omitted inside a memory:db block defaults to that block's id.</xs:documentation>
+            <xs:documentation>Optional database selector. Required at runtime when used outside a
+                memory:db block; omitted inside a memory:db block defaults to that block's id.</xs:documentation>
         </xs:annotation>
         <xs:attribute name="db" type="xs:string" />
     </xs:attributeGroup>
@@ -19,17 +20,16 @@
     <!-- Database declaration (root-only by convention) -->
     <xs:element name="db">
         <xs:annotation>
-            <xs:documentation>
-                Declare a database by id with optional DSN or DSN expression.
-                Placement: root-only by convention (schema cannot enforce).
-                Evaluation: dsnexpr is evaluated at first use, after datamodel and scripts execute.
-                Children: may contain memory:* elements; within this block, child elements may omit the db attribute.
-            </xs:documentation>
+            <xs:documentation> Declare a database by id with optional DSN or DSN expression.
+                Placement: root-only by convention (schema cannot enforce). Evaluation: dsnexpr is
+                evaluated at first use, after datamodel and scripts execute. Children: may contain
+                memory:* elements; within this block, child elements may omit the db attribute. </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
                 <!-- Allow any memory:* elements inside for scoping db by ancestry -->
-                <xs:any namespace="##targetNamespace" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+                <xs:any namespace="##targetNamespace" processContents="lax" minOccurs="0"
+                    maxOccurs="unbounded" />
             </xs:sequence>
             <xs:attribute name="id" type="xs:string" use="required" />
             <xs:attribute name="dsn" type="xs:string" />
@@ -44,7 +44,7 @@
             <xs:documentation>Close the memory database connection</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -57,7 +57,7 @@
             <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="value" type="xs:string" />
             <xs:attribute name="valueexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -70,7 +70,7 @@
             <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -81,7 +81,7 @@
         <xs:complexType>
             <xs:attribute name="key" type="xs:string" />
             <xs:attribute name="keyexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -98,7 +98,7 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="dstkey" type="xs:string" />
             <xs:attribute name="dstkeyexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -115,7 +115,7 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="dstkey" type="xs:string" />
             <xs:attribute name="dstkeyexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -130,7 +130,7 @@
             <xs:attribute name="queryexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -139,7 +139,7 @@
             <xs:documentation>Delete all key-value pairs from the memory store</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -150,7 +150,7 @@
             <xs:documentation>Begin a database transaction</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -159,7 +159,7 @@
             <xs:documentation>Commit the current transaction</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -168,7 +168,7 @@
             <xs:documentation>Rollback the current transaction</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -179,7 +179,7 @@
         <xs:complexType>
             <xs:attribute name="name" type="xs:string" />
             <xs:attribute name="nameexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -190,7 +190,7 @@
         <xs:complexType>
             <xs:attribute name="name" type="xs:string" />
             <xs:attribute name="nameexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -205,7 +205,7 @@
             <xs:attribute name="sqlexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -218,7 +218,7 @@
             <xs:attribute name="sqlexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -236,7 +236,7 @@
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="key" type="xs:string" />
             <xs:attribute name="keyexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -249,7 +249,7 @@
             <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="vector" type="xs:string" />
             <xs:attribute name="vectorexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -265,7 +265,7 @@
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="topk" type="xs:integer" />
             <xs:attribute name="topkexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -276,7 +276,7 @@
         <xs:complexType>
             <xs:attribute name="key" type="xs:string" />
             <xs:attribute name="keyexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -285,7 +285,7 @@
             <xs:documentation>Initialize or manage vector index (auto-initialized)</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -301,7 +301,7 @@
             <xs:attribute name="props" type="xs:string" />
             <xs:attribute name="propsexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -318,7 +318,7 @@
             <xs:attribute name="relexpr" type="xs:string" />
             <xs:attribute name="props" type="xs:string" />
             <xs:attribute name="propsexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -330,7 +330,7 @@
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -343,7 +343,7 @@
             <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -354,7 +354,7 @@
         <xs:complexType>
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="idexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -369,7 +369,7 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="rel" type="xs:string" />
             <xs:attribute name="relexpr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -383,7 +383,7 @@
             <xs:attribute name="direction" type="xs:string" />
             <xs:attribute name="directionexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -397,7 +397,7 @@
             <xs:attribute name="direction" type="xs:string" />
             <xs:attribute name="directionexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -412,7 +412,7 @@
             <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -421,7 +421,7 @@
             <xs:documentation>Delete all nodes and edges from the graph</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -432,7 +432,7 @@
         <xs:complexType>
             <xs:attribute name="pathexpr" type="xs:string" use="required" />
             <xs:attribute name="location" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
@@ -453,7 +453,7 @@
             <xs:attribute name="type" type="xs:string" />
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="query-expr" type="xs:string" />
-            <xs:attributeGroup ref="dbRef" />
+            <xs:attributeGroup ref="memory:dbRef" />
         </xs:complexType>
     </xs:element>
 
