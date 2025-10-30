@@ -17,13 +17,13 @@
         <xs:attribute name="db" type="xs:string" />
     </xs:attributeGroup>
 
-    <!-- Database declaration (root-only by convention) -->
-    <xs:element name="db">
+    <!-- Database declaration (can be used as root element) -->
+    <xs:element name="db" substitutionGroup="agentml:root">
         <xs:annotation>
-            <xs:documentation> Declare a database by id with optional DSN or DSN expression.
-                Placement: root-only by convention (schema cannot enforce). Evaluation: dsnexpr is
-                evaluated at first use, after datamodel and scripts execute. Children: may contain
-                memory:* elements; within this block, child elements may omit the db attribute. </xs:documentation>
+            <xs:documentation> Declare a database by id with optional DSN or DSN expression. Can be
+                used as a root element in AgentML documents. Evaluation: dsnexpr is evaluated at
+                first use, after datamodel and scripts execute. Children: may contain memory:*
+                elements; within this block, child elements may omit the db attribute. </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
