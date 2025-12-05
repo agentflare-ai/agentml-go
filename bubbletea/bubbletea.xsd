@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml-go/bubbletea"
+    xmlns:bubbletea="github.com/agentflare-ai/agentml-go/bubbletea"
+    xmlns:agentml="github.com/agentflare-ai/agentml"
+    elementFormDefault="qualified">
+
+    <xs:import namespace="github.com/agentflare-ai/agentml"
+        schemaLocation="https://xsd.agentml.dev/agentflare-ai/agentml/agentml.xsd">
+        <xs:annotation>
+            <xs:documentation>Imports AgentML executable substitution group so bubbletea:program can
+                be used wherever executable content is allowed.</xs:documentation>
+        </xs:annotation>
+    </xs:import>
+
+    <xs:element name="program" substitutionGroup="agentml:executable">
+        <xs:annotation>
+            <xs:documentation>Starts an interactive Bubble Tea UI. Emits AgentML events based on
+                user cursor movement, selection changes, submit or quit actions. Event payloads
+                include: {component: "list", programId, listId, selectedIndices, selectedValues,
+                selectedLabels, reason}.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="bubbletea:list" minOccurs="1" maxOccurs="1" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Optional program identifier included in emitted events. When
+                        omitted a random ID derived from muid.String() is assigned.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="list">
+        <xs:annotation>
+            <xs:documentation>Declarative list widget rendered by Bubble Tea. Handles navigation
+                with arrow keys / vim bindings, space to toggle selections (when multi=true), enter
+                to submit, and q/ctrl+c to quit.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="bubbletea:item" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="title" type="xs:string" />
+            <xs:attribute name="multi" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>Allow multi-select when true. When false only one item can be
+                        selected at a time.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="cursor-event" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Event emitted whenever the cursor moves. Omit to disable.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="change-event" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Event emitted when selection changes via the space bar (or
+                        implicit single-select updates).</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit">
+                <xs:annotation>
+                    <xs:documentation>Event emitted when the user presses enter to finalize their
+                        selection.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit">
+                <xs:annotation>
+                    <xs:documentation>Event emitted when the user quits (q or ctrl+c).</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="item">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="value" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>Semantic value stored in events. Defaults to the item
+                                text when omitted.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

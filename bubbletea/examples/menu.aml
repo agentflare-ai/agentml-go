@@ -1,0 +1,38 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    datamodel="ecmascript"
+    xmlns:bubbletea="github.com/agentflare-ai/agentml-go/bubbletea">
+
+    <datamodel>
+        <data id="selection" expr="null" />
+    </datamodel>
+
+    <state id="loop">
+        <onentry>
+            <bubbletea:program id="demo-list">
+                <bubbletea:list title="What should we buy?"
+                    multi="true"
+                    cursor-event="ui.cursor"
+                    change-event="ui.change"
+                    submit-event="ui.submit"
+                    quit-event="ui.quit">
+                    <bubbletea:item value="coffee">Coffee beans</bubbletea:item>
+                    <bubbletea:item value="tea">Loose leaf tea</bubbletea:item>
+                    <bubbletea:item value="milk">Oat milk</bubbletea:item>
+                    <bubbletea:item value="snacks">Snacks</bubbletea:item>
+                </bubbletea:list>
+            </bubbletea:program>
+        </onentry>
+
+        <transition event="ui.submit" target="done">
+            <assign location="selection" expr="_event.data" />
+        </transition>
+        <transition event="ui.quit" target="done" />
+    </state>
+
+    <final id="done">
+        <onentry>
+            <log label="bubbletea.selection" expr="selection" />
+        </onentry>
+    </final>
+
+</agentml>

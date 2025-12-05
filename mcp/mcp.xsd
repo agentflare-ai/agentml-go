@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml-go/mcp"
+    xmlns:mcp="github.com/agentflare-ai/agentml-go/mcp"
+    elementFormDefault="qualified">
+
+    <!-- MCP connect element - establishes connection to an MCP server -->
+    <xs:element name="connect">
+        <xs:complexType>
+            <xs:attribute name="serverid" type="xs:string" use="required" />
+            <xs:attribute name="command" type="xs:string" />
+            <xs:attribute name="commandexpr" type="xs:string" />
+            <xs:attribute name="args" type="xs:string" />
+            <xs:attribute name="argsexpr" type="xs:string" />
+            <xs:attribute name="transport" type="xs:string" default="stdio" />
+            <xs:attribute name="url" type="xs:string" />
+            <xs:attribute name="urlexpr" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- MCP call element - invokes an MCP tool (default) or other callable -->
+    <xs:element name="call">
+        <xs:complexType>
+            <xs:attribute name="serverid" type="xs:string" use="required" />
+            <xs:attribute name="type" type="xs:string" default="tool" />
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="nameexpr" type="xs:string" />
+            <xs:attribute name="params" type="xs:string" />
+            <xs:attribute name="paramsexpr" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- MCP get element - retrieves an MCP resource or prompt -->
+    <xs:element name="get">
+        <xs:complexType>
+            <xs:attribute name="serverid" type="xs:string" use="required" />
+            <xs:attribute name="type" type="xs:string" use="required" />
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="nameexpr" type="xs:string" />
+            <xs:attribute name="uri" type="xs:string" />
+            <xs:attribute name="uriexpr" type="xs:string" />
+            <xs:attribute name="arguments" type="xs:string" />
+            <xs:attribute name="argumentsexpr" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- MCP list element - lists available items from an MCP server -->
+    <xs:element name="list">
+        <xs:complexType>
+            <xs:attribute name="serverid" type="xs:string" use="required" />
+            <xs:attribute name="type" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- MCP disconnect element - closes connection to an MCP server -->
+    <xs:element name="disconnect">
+        <xs:complexType>
+            <xs:attribute name="serverid" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
