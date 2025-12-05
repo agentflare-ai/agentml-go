@@ -225,6 +225,17 @@ type Namespace interface {
 	Unload(ctx context.Context) error
 }
 
+// Snapshotter is an optional interface that namespaces can implement to provide
+// custom snapshot functionality. When a namespace implements this interface,
+// the interpreter will call Snapshot during snapshot generation to allow the
+// namespace to contribute custom state to the runtime snapshot.
+type Snapshotter interface {
+	// Snapshot returns a custom snapshot element for this namespace.
+	// The returned element will be appended to the runtime snapshot.
+	// Returns nil element if the namespace has no custom snapshot data.
+	Snapshot(ctx context.Context, config SnapshotConfig) (xmldom.Element, error)
+}
+
 type DataModel interface {
 	// Initialize sets up the data model with initial data elements.
 	// This is called when the SCXML document is loaded and should create

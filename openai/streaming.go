@@ -44,7 +44,7 @@ type ToolCallWriter struct {
 }
 
 // jsonDecoderStage is a pipeline stage that decodes and validates JSON arguments
-func jsonDecoderStage(ctx context.Context, w *ToolCallWriter, input *StreamingToolCall, next pipeline.Next[context.Context, *ToolCallWriter, *StreamingToolCall]) error {
+func jsonDecoderStage(ctx context.Context, w *ToolCallWriter, input *StreamingToolCall, next pipeline.NextPipe[context.Context, *ToolCallWriter, *StreamingToolCall]) error {
 	ctx, span := otel.Tracer("openai.streaming").Start(ctx, "JSONDecoder")
 	defer span.End()
 
@@ -83,7 +83,7 @@ func jsonDecoderStage(ctx context.Context, w *ToolCallWriter, input *StreamingTo
 
 // createParallelValidatorStage creates a pipeline stage that validates against the correct schema for the function
 func createParallelValidatorStage(pctx *StreamingPipelineContext) pipeline.Pipe[context.Context, *ToolCallWriter, *StreamingToolCall] {
-	return func(ctx context.Context, w *ToolCallWriter, input *StreamingToolCall, next pipeline.Next[context.Context, *ToolCallWriter, *StreamingToolCall]) error {
+	return func(ctx context.Context, w *ToolCallWriter, input *StreamingToolCall, next pipeline.NextPipe[context.Context, *ToolCallWriter, *StreamingToolCall]) error {
 		ctx, span := otel.Tracer("openai.streaming").Start(ctx, "ParallelValidator")
 		defer span.End()
 
@@ -181,7 +181,7 @@ func CreateCorrectionStage(pctx *StreamingPipelineContext) func(context.Context,
 
 // createToolExecutionStage creates a pipeline stage that executes validated tool calls
 func createToolExecutionStage(pctx *StreamingPipelineContext) pipeline.Pipe[context.Context, *ToolCallWriter, *StreamingToolCall] {
-	return func(ctx context.Context, w *ToolCallWriter, input *StreamingToolCall, next pipeline.Next[context.Context, *ToolCallWriter, *StreamingToolCall]) error {
+	return func(ctx context.Context, w *ToolCallWriter, input *StreamingToolCall, next pipeline.NextPipe[context.Context, *ToolCallWriter, *StreamingToolCall]) error {
 		ctx, span := otel.Tracer("openai.streaming").Start(ctx, "ToolExecution")
 		defer span.End()
 

@@ -107,11 +107,19 @@
                 </xs:annotation>
             </xs:attribute>
 
+            <xs:attribute name="max-output-tokens" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation> Maximum number of tokens in the generated response. Limits
+                        output length to prevent excessive token usage. Applied to the total
+                        response including tool calls and content. Examples: 1000 | 4096 | 8192 </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+
             <xs:attribute name="reasoning" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation> Reasoning effort for o1 models. Controls how much time the model
-                        spends thinking before responding. Values: "low" | "medium" | "high". Default: none
-                        (model default). Only applies to o1 series models. </xs:documentation>
+                    <xs:documentation> Reasoning effort for o1 models. Controls how much time the
+                        model spends thinking before responding. Values: "low" | "medium" | "high".
+                        Default: none (model default). Only applies to o1 series models. </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 

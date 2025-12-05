@@ -106,15 +106,26 @@ func executeGenerate(ctx context.Context, interpreter agentml.Interpreter, clien
 	location := string(el.GetAttribute("location"))
 	retryStr := string(el.GetAttribute("retry"))
 	reasoning := string(el.GetAttribute("reasoning"))
-	if reasoning != "" {
-		slog.InfoContext(ctx, "openai: reasoning effort specified", "reasoning", reasoning)
-	}
-
+	maxOutputTokensStr := string(el.GetAttribute("max-output-tokens"))
 	retry := 3
 	if retryStr != "" {
 		if r, err := strconv.Atoi(retryStr); err == nil && r >= 0 {
 			retry = r
 		}
+	}
+
+	var maxOutputTokens *int
+	if maxOutputTokensStr != "" {
+		if tokens, err := strconv.Atoi(maxOutputTokensStr); err == nil && tokens > 0 {
+			maxOutputTokens = &tokens
+		}
+	}
+
+	if reasoning != "" {
+		slog.InfoContext(ctx, "openai: reasoning effort specified", "reasoning", reasoning)
+	}
+	if maxOutputTokens != nil {
+		slog.InfoContext(ctx, "openai: max output tokens specified", "max_output_tokens", *maxOutputTokens)
 	}
 
 	// Validate required attributes
@@ -225,16 +236,15 @@ func executeGenerate(ctx context.Context, interpreter agentml.Interpreter, clien
 		openai.UserMessage(finalPrompt),
 	}
 
-	// Handle non-tool case (simple chat)
+	// Determine tool choice based on whether location is provided
+	toolChoice := responses.ToolChoiceOptionsAuto
+	if location == "" {
+		// When location is omitted, force tool calling for event-based execution
+		toolChoice = responses.ToolChoiceOptionsRequired
+	}
+
+	// Handle non-tool case (simple chat) - only when location is provided
 	if len(openaiTools) == 0 {
-		if location == "" {
-			return &agentml.PlatformError{
-				EventName: "error.execution",
-				Message:   "Generate element missing required 'location' attribute (no tools available)",
-				Data:      map[string]any{"element": "openai:generate", "line": 0},
-				Cause:     fmt.Errorf("location required when no tools are available"),
-			}
-		}
 
 		// Simple chat without tools
 		if reasoning != "" {
@@ -254,6 +264,11 @@ func executeGenerate(ctx context.Context, interpreter agentml.Interpreter, clien
 			params.Reasoning = shared.ReasoningParam{
 				Effort: shared.ReasoningEffort(reasoning),
 			}
+		}
+
+		// Add max output tokens if specified
+		if maxOutputTokens != nil {
+			params.MaxOutputTokens = param.NewOpt(int64(*maxOutputTokens))
 		}
 
 		response, err := client.Responses.New(ctx, params)
@@ -350,9 +365,13 @@ func executeGenerate(ctx context.Context, interpreter agentml.Interpreter, clien
 			"retry_num", retryNum,
 			"model", modelName,
 			"num_tools", len(openaiTools),
+			"tool_choice", string(toolChoice),
 		}
 		if reasoning != "" {
 			logAttrs = append(logAttrs, "reasoning", reasoning)
+		}
+		if maxOutputTokens != nil {
+			logAttrs = append(logAttrs, "max_output_tokens", *maxOutputTokens)
 		}
 		slog.InfoContext(ctx, "📡 Calling OpenAI streaming API", logAttrs...)
 
@@ -376,7 +395,7 @@ func executeGenerate(ctx context.Context, interpreter agentml.Interpreter, clien
 			Input: responses.ResponseNewParamsInputUnion{OfInputItemList: inputItems},
 			Tools: responseTools,
 			ToolChoice: responses.ResponseNewParamsToolChoiceUnion{
-				OfToolChoiceMode: param.NewOpt(responses.ToolChoiceOptionsAuto),
+				OfToolChoiceMode: param.NewOpt(toolChoice),
 			},
 		}
 
@@ -385,6 +404,11 @@ func executeGenerate(ctx context.Context, interpreter agentml.Interpreter, clien
 			streamParams.Reasoning = shared.ReasoningParam{
 				Effort: shared.ReasoningEffort(reasoning),
 			}
+		}
+
+		// Add max output tokens if specified
+		if maxOutputTokens != nil {
+			streamParams.MaxOutputTokens = param.NewOpt(int64(*maxOutputTokens))
 		}
 
 		// Track tool calls for error reporting
