@@ -4,9 +4,11 @@ go 1.24.5
 
 require (
 	github.com/agentflare-ai/agentmlx v0.1.1-beta.7
+	github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007203221-d033231435df
 	github.com/agentflare-ai/go-jsonschema v0.0.0-20251023153407-8013a2f0a2bd
 	github.com/agentflare-ai/go-pipeline v0.0.0-20251009204653-481d7c73f616
 	github.com/agentflare-ai/go-xmldom v0.1.1
+	github.com/agentflare-ai/go-xsd v0.1.5
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/ollama/ollama v0.12.7
 	github.com/openai/openai-go v1.12.0
@@ -22,8 +24,6 @@ require (
 	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1 // indirect
-	github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007203221-d033231435df // indirect
-	github.com/agentflare-ai/go-xsd v0.1.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

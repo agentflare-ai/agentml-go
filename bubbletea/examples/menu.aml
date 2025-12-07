@@ -1,4 +1,5 @@
 <agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
     datamodel="ecmascript"
     xmlns:bubbletea="github.com/agentflare-ai/agentml-go/bubbletea">
 
