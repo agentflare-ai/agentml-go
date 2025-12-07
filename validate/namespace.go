@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/agentflare-ai/agentml-go"
-	"github.com/agentflare-ai/agentmlx/validator"
+	"github.com/agentflare-ai/agentml-go/validator"
 	"github.com/agentflare-ai/go-xmldom"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -27,11 +27,11 @@ func (n *Namespace) Unload(ctx context.Context) error { return nil }
 
 // ValidationResult represents the result of validating AML content
 type ValidationResult struct {
-	Valid        bool                 `json:"valid"`
-	ErrorCount   int                  `json:"error_count"`
-	WarningCount int                  `json:"warning_count"`
-	InfoCount    int                  `json:"info_count"`
-	Diagnostics  []agentml.Diagnostic `json:"diagnostics"`
+	Valid        bool                   `json:"valid"`
+	ErrorCount   int                    `json:"error_count"`
+	WarningCount int                    `json:"warning_count"`
+	InfoCount    int                    `json:"info_count"`
+	Diagnostics  []validator.Diagnostic `json:"diagnostics"`
 }
 
 func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error) {
@@ -173,8 +173,8 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 			ErrorCount:   1,
 			WarningCount: 0,
 			InfoCount:    0,
-			Diagnostics: []agentml.Diagnostic{{
-				Severity: agentml.SeverityError,
+			Diagnostics: []validator.Diagnostic{{
+				Severity: validator.SeverityError,
 				Code:     "VALIDATION_ERROR",
 				Message:  err.Error(),
 			}},
@@ -201,11 +201,11 @@ func (n *Namespace) execValidate(ctx context.Context, el xmldom.Element) error {
 	infoCount := 0
 	for _, diag := range result.Diagnostics {
 		switch diag.Severity {
-		case agentml.SeverityError:
+		case validator.SeverityError:
 			errorCount++
-		case agentml.SeverityWarning:
+		case validator.SeverityWarning:
 			warningCount++
-		case agentml.SeverityInfo:
+		case validator.SeverityInfo:
 			infoCount++
 		}
 	}

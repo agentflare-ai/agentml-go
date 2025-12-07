@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/agentflare-ai/agentml-go"
+	"github.com/agentflare-ai/agentml-go/validator"
 )
 
 func TestNamespace_URI(t *testing.T) {
@@ -33,7 +33,7 @@ func TestValidationResult_Struct(t *testing.T) {
 		ErrorCount:   0,
 		WarningCount: 1,
 		InfoCount:    2,
-		Diagnostics:  []agentml.Diagnostic{},
+		Diagnostics:  []validator.Diagnostic{},
 	}
 
 	if !result.Valid {
