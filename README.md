@@ -44,6 +44,9 @@
 - **[stdin/](./stdin/)** - Standard input/output for console agents
 - **[env/](./env/)** - Environment variable and configuration loading
 - **[prompt/](./prompt/)** - Prompt management and snapshot utilities
+- **[bubbletea/](./bubbletea/)** - Interactive terminal UIs using Bubble Tea, emitting AgentML events
+- **[mcp/](./mcp/)** - Model Context Protocol client for connecting to MCP servers, tools, and resources
+- **[validate/](./validate/)** - AgentML content validation namespace for AML/SCXML diagnostics
 
 ## 🚀 Installation
 
@@ -61,6 +64,15 @@ go get github.com/agentflare-ai/agentml-go/ollama
 
 # Memory namespace
 go get github.com/agentflare-ai/agentml-go/memory
+
+# Bubble Tea namespace
+go get github.com/agentflare-ai/agentml-go/bubbletea
+
+# MCP namespace
+go get github.com/agentflare-ai/agentml-go/mcp
+
+# Validate namespace
+go get github.com/agentflare-ai/agentml-go/validate
 
 # Or install all at once
 go get github.com/agentflare-ai/agentml-go/...
@@ -211,7 +223,7 @@ To create a new namespace:
 5. **Add tests**: Create comprehensive tests
 6. **Document**: Write README.md with examples
 
-See existing namespaces (gemini, ollama, memory) as reference implementations.
+See existing namespaces (openai, gemini, ollama, memory, bubbletea, mcp, validate) as reference implementations.
 
 ## 🤝 Contributing
 
@@ -233,9 +245,12 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for gu
 
 ### Package-Specific Docs
 
+- [OpenAI Namespace](./openai/README.md)
 - [Gemini Namespace](./gemini/README.md)
 - [Ollama Namespace](./ollama/README.md)
 - [Memory Namespace](./memory/README.md)
+- [Bubble Tea Namespace](./bubbletea/README.md)
+- [MCP Namespace](./mcp/README.md)
 
 ## 🔖 Versioning
 
