@@ -14,6 +14,11 @@
 
 ### LLM Integration
 
+- **[openai/](./openai/)** - OpenAI LLM integration with GPT-4o and compatible models
+  - Multi-model support (GPT-4o, GPT-4o mini, o1, and more)
+  - Streaming and structured generation
+  - Tools and JSON schema-style output
+  
 - **[gemini/](./gemini/)** - Google Gemini LLM integration with advanced features
   - Multi-model support (Flash, Pro, Thinking)
   - Streaming and structured generation
@@ -45,6 +50,9 @@
 Install individual packages as needed:
 
 ```bash
+# OpenAI namespace
+go get github.com/agentflare-ai/agentml-go/openai
+
 # Gemini namespace
 go get github.com/agentflare-ai/agentml-go/gemini
 
@@ -67,7 +75,7 @@ Reference these namespaces in your AgentML agent files:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <datamodel>
@@ -80,9 +88,9 @@ Reference these namespaces in your AgentML agent files:
       <!-- Generate embedding -->
       <memory:embed location="embedding" expr="user_input" />
       
-      <!-- Query with Gemini -->
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <!-- Query with OpenAI -->
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Analyze: ' + user_input" />
     </onentry>
