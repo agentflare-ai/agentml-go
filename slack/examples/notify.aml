@@ -1,0 +1,47 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
+    datamodel="ecmascript"
+    xmlns:slack="github.com/agentflare-ai/agentml-go/slack">
+
+    <datamodel>
+        <data id="channel" expr="'C1234567890'" />
+        <data id="message" expr="'Hello from AgentML!'" />
+        <data id="messageSent" expr="false" />
+    </datamodel>
+
+    <state id="send_notification">
+        <onentry>
+            <slack:send channel-expr="channel"
+                text-expr="message"
+                event="slack.message.sent" />
+        </onentry>
+
+        <transition event="slack.message.sent" target="done">
+            <assign location="messageSent" expr="true" />
+            <log label="slack.result" expr="_event.data" />
+        </transition>
+
+        <transition event="error.communication" target="retry" />
+        <transition event="error.execution" target="error_state" />
+    </state>
+
+    <state id="retry">
+        <onentry>
+            <log label="slack.retry" expr="'Retrying message send...'" />
+        </onentry>
+        <transition after="2s" target="send_notification" />
+    </state>
+
+    <state id="error_state">
+        <onentry>
+            <log label="slack.error" expr="_event.data" />
+        </onentry>
+    </state>
+
+    <final id="done">
+        <onentry>
+            <log label="slack.complete" expr="'Message sent successfully'" />
+        </onentry>
+    </final>
+
+</agentml>

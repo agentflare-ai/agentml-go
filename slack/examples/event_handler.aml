@@ -1,0 +1,55 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
+    datamodel="ecmascript"
+    xmlns:slack="github.com/agentflare-ai/agentml-go/slack">
+
+    <datamodel>
+        <data id="lastMessage" expr="null" />
+        <data id="lastUser" expr="null" />
+        <data id="lastChannel" expr="null" />
+    </datamodel>
+
+    <state id="listening">
+        <transition event="slack.message.posted" target="process_message">
+            <assign location="lastMessage" expr="_event.data.text" />
+            <assign location="lastUser" expr="_event.data.user" />
+            <assign location="lastChannel" expr="_event.data.channel" />
+        </transition>
+
+        <transition event="slack.reaction.added" target="handle_reaction" />
+        <transition event="slack.app.mention" target="handle_mention" />
+    </state>
+
+    <state id="process_message">
+        <onentry>
+            <log label="slack.message" expr="'Received: ' + lastMessage + ' from user ' + lastUser" />
+
+            <if cond="lastMessage.indexOf('hello') >= 0 || lastMessage.indexOf('hi') >= 0">
+                <slack:send channel-expr="lastChannel"
+                    text-expr="'Hello! How can I help you?'"
+                    event="slack.greeting.sent" />
+            </if>
+        </onentry>
+
+        <transition event="slack.greeting.sent" target="listening" />
+        <transition event="*" target="listening" />
+    </state>
+
+    <state id="handle_reaction">
+        <onentry>
+            <log label="slack.reaction" expr="'Reaction added: ' + _event.data" />
+        </onentry>
+        <transition event="*" target="listening" />
+    </state>
+
+    <state id="handle_mention">
+        <onentry>
+            <slack:send channel-expr="lastChannel"
+                text-expr="'You mentioned me! I heard: ' + lastMessage"
+                event="slack.mention.replied" />
+        </onentry>
+
+        <transition event="slack.mention.replied" target="listening" />
+    </state>
+
+</agentml>

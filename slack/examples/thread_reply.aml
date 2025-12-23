@@ -1,0 +1,43 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
+    datamodel="ecmascript"
+    xmlns:slack="github.com/agentflare-ai/agentml-go/slack">
+
+    <datamodel>
+        <data id="channel" expr="'C1234567890'" />
+        <data id="threadTs" expr="null" />
+        <data id="replyCount" expr="0" />
+    </datamodel>
+
+    <state id="initial_message">
+        <onentry>
+            <slack:send channel-expr="channel"
+                        text-expr="'Starting a conversation thread...'"
+                        event="slack.thread.started" />
+        </onentry>
+
+        <transition event="slack.thread.started" target="wait_for_reply">
+            <assign location="threadTs" expr="_event.data.ts" />
+        </transition>
+    </state>
+
+    <state id="wait_for_reply">
+        <transition event="slack.message.posted" target="reply_in_thread">
+            <if cond="_event.data.ts != threadTs">
+                <assign location="replyCount" expr="replyCount + 1" />
+            </if>
+        </transition>
+    </state>
+
+    <state id="reply_in_thread">
+        <onentry>
+            <slack:send channel-expr="channel"
+                        text-expr="'This is reply #' + replyCount + ' in the thread'"
+                        thread-expr="threadTs"
+                        event="slack.reply.sent" />
+        </onentry>
+
+        <transition event="slack.reply.sent" target="wait_for_reply" />
+    </state>
+
+</agentml>

@@ -1,0 +1,120 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
+    datamodel="ecmascript"
+    xmlns:slack="github.com/agentflare-ai/agentml-go/slack"
+    xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
+
+    <datamodel>
+        <data id="channel" expr="null" />
+        <data id="user" expr="null" />
+        <data id="userMessage" expr="''" />
+        <data id="threadTs" expr="null" />
+        <data id="conversationHistory" expr="[]" />
+        <data id="aiResponse" expr="''" />
+        <data id="model" expr="'gpt-4o-mini'" />
+    </datamodel>
+
+    <state id="listening">
+        <!-- Handle new messages -->
+        <transition event="slack.message.posted" target="check_thread">
+            <assign location="channel" expr="_event.data.channel" />
+            <assign location="user" expr="_event.data.user" />
+            <assign location="userMessage" expr="_event.data.text" />
+            <assign location="threadTs" expr="_event.data.thread_ts || null" />
+        </transition>
+
+        <!-- Handle app mentions -->
+        <transition event="slack.app.mention" target="check_thread">
+            <assign location="channel" expr="_event.data.channel" />
+            <assign location="user" expr="_event.data.user" />
+            <assign location="userMessage" expr="_event.data.text" />
+            <assign location="threadTs" expr="_event.data.thread_ts || null" />
+        </transition>
+    </state>
+
+    <state id="check_thread">
+        <onentry>
+            <!-- If this is a new message (no thread), start a new conversation -->
+            <!-- If it's a thread reply, continue the existing conversation -->
+            <if cond="threadTs == null">
+                <assign location="conversationHistory" expr="[]" />
+            </if>
+        </onentry>
+
+        <transition event="*" target="process_message" />
+    </state>
+
+    <state id="process_message">
+        <onentry>
+            <!-- Add user message to history -->
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{role: 'user', content: userMessage}])" />
+
+            <!-- Generate AI response with context-aware prompt -->
+            <openai:generate modelexpr="model" location="aiResponse">
+                <openai:prompt>
+                    You are a helpful Slack bot assistant. You're having a conversation in a Slack
+                    channel.
+
+                    {{if .threadTs}}
+                    This is part of an ongoing thread conversation.
+                    {{else}}
+                    This is a new conversation.
+                    {{end}}
+
+                    Previous messages in this conversation:
+                    {{range .conversationHistory}}
+                    {{.role}}: {{.content}}
+                    {{end}}
+
+                    Current user message: {{.userMessage}}
+
+                    Provide a helpful, concise response. If the user asks a question, answer it.
+                    If they're making a statement, acknowledge it appropriately.
+                </openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <!-- After onentry completes, aiResponse will be populated -->
+        <transition event="*" target="send_response" />
+    </state>
+
+    <state id="send_response">
+        <onentry>
+            <!-- Send response in thread if this is a threaded conversation -->
+            <if cond="threadTs != null">
+                <slack:send channel-expr="channel"
+                    text-expr="aiResponse"
+                    thread-expr="threadTs"
+                    event="slack.response.sent" />
+            </if>
+            <if cond="threadTs == null">
+                <slack:send channel-expr="channel"
+                    text-expr="aiResponse"
+                    event="slack.response.sent" />
+            </if>
+
+            <!-- Add AI response to conversation history -->
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{role: 'assistant', content: aiResponse}])" />
+        </onentry>
+
+        <transition event="slack.response.sent" target="listening" />
+        <transition event="error.communication" target="error_handling" />
+    </state>
+
+    <state id="error_handling">
+        <onentry>
+            <log label="slack.error" expr="_event.data" />
+
+            <!-- Send user-friendly error message -->
+            <slack:send channel-expr="channel"
+                text-expr="'⚠️ Sorry, I encountered an issue. Please try again in a moment.'"
+                thread-expr="threadTs"
+                event="slack.error.sent" />
+        </onentry>
+
+        <transition event="slack.error.sent" target="listening" />
+    </state>
+
+</agentml>

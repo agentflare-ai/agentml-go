@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml-go/slack"
+    xmlns:slack="github.com/agentflare-ai/agentml-go/slack"
+    xmlns:agentml="github.com/agentflare-ai/agentml"
+    elementFormDefault="qualified">
+
+    <xs:import namespace="github.com/agentflare-ai/agentml"
+        schemaLocation="https://xsd.agentml.dev/agentflare-ai/agentml/agentml.xsd">
+        <xs:annotation>
+            <xs:documentation>Imports AgentML executable substitution group so slack:send can be
+                used wherever executable content is allowed.</xs:documentation>
+        </xs:annotation>
+    </xs:import>
+
+    <xs:element name="send" substitutionGroup="agentml:executable">
+        <xs:annotation>
+            <xs:documentation>Sends a message to a Slack channel or user. Emits a completion event
+                (default: slack.message.sent) with payload: {component: "slack", action: "send",
+                channel, ts, ok}. Supports text messages, threaded replies, and block kit via
+                expressions.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="channel" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Channel ID (e.g., C1234567890) or name (e.g., #general) to
+                        send the message to. Mutually exclusive with user attribute.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="channel-expr" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Expression that evaluates to a channel ID or name. Mutually
+                        exclusive with channel attribute and user/user-expr.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="user" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>User ID (e.g., U1234567890) to send a direct message to.
+                        Mutually exclusive with channel attribute.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="user-expr" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Expression that evaluates to a user ID. Mutually exclusive
+                        with user attribute and channel/channel-expr.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="text" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Plain text message content. Mutually exclusive with text-expr.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="text-expr" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Expression that evaluates to the message text. Mutually
+                        exclusive with text attribute.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="thread_ts" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Thread timestamp (TS) to reply to an existing message.
+                        Mutually exclusive with thread-expr.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="thread-expr" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Expression that evaluates to a thread timestamp. Mutually
+                        exclusive with thread_ts attribute.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="blocks-expr" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Expression that evaluates to a Slack Block Kit array. Each
+                        block should be a map/object with type and other block-specific fields. When
+                        provided, blocks take precedence over text.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="event" type="xs:string" default="slack.message.sent">
+                <xs:annotation>
+                    <xs:documentation>Event name to emit when the message is successfully sent.
+                        Defaults to slack.message.sent. The event payload includes channel, ts
+                        (timestamp), and ok status.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

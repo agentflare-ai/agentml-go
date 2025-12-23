@@ -1,0 +1,59 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
+    datamodel="ecmascript"
+    xmlns:slack="github.com/agentflare-ai/agentml-go/slack"
+    xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
+
+    <datamodel>
+        <data id="channel" expr="null" />
+        <data id="user" expr="null" />
+        <data id="userMessage" expr="''" />
+        <data id="conversationHistory" expr="[]" />
+    </datamodel>
+
+    <state id="listening">
+        <transition event="slack.message.posted" target="process_with_tools">
+            <assign location="channel" expr="_event.data.channel" />
+            <assign location="user" expr="_event.data.user" />
+            <assign location="userMessage" expr="_event.data.text" />
+        </transition>
+    </state>
+
+    <state id="process_with_tools">
+        <onentry>
+            <!-- OpenAI generate with tool calling enabled -->
+            <!-- When tools are available, the LLM can call send_* functions to trigger state
+            transitions -->
+            <openai:generate model="gpt-4o">
+                <openai:prompt>
+                    You are a helpful Slack bot. The user sent this message: {{.userMessage}}
+
+                    You can respond by calling the send_response function with your reply.
+                    You can also call send_question to ask a clarifying question.
+                </openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <!-- OpenAI will call send_response or send_question functions, triggering these transitions -->
+        <transition event="response" target="send_to_slack">
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{role: 'user', content: userMessage}, {role: 'assistant', content: _event.data.message}])" />
+        </transition>
+
+        <transition event="question" target="send_to_slack">
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{role: 'user', content: userMessage}, {role: 'assistant', content: _event.data.message}])" />
+        </transition>
+    </state>
+
+    <state id="send_to_slack">
+        <onentry>
+            <slack:send channel-expr="channel"
+                text-expr="_event.data.message"
+                event="slack.response.sent" />
+        </onentry>
+
+        <transition event="slack.response.sent" target="listening" />
+    </state>
+
+</agentml>

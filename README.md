@@ -1,52 +1,54 @@
 # agentml-go
 
 > **🚧 Early Alpha - Building in Public**
-> 
+>
 > agentml-go is in early alpha and being built openly with the community. The vision is ambitious, the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
 >
 > **📋 This Repository:** Contains Go implementations of AgentML namespace packages. These packages enable LLM integration, memory operations, I/O handling, and other capabilities for AgentML agents. For the language specification and runtime, see:
-> - **[agentml](https://github.com/agentflare-ai/agentml)** - AgentML language specification and documentation
-> - **[agentmlx](https://github.com/agentflare-ai/agentmlx)** - Reference runtime (Go/WASM) **NOT YET RELEASED**
+>
+> * **[agentml](https://github.com/agentflare-ai/agentml)** - AgentML language specification and documentation
+> * **[agentmlx](https://github.com/agentflare-ai/agentmlx)** - Reference runtime (Go/WASM) **NOT YET RELEASED**
 
----
+***
 
 ## 📦 Available Namespaces
 
 ### LLM Integration
 
-- **[openai/](./openai/)** - OpenAI LLM integration with GPT-4o and compatible models
-  - Multi-model support (GPT-4o, GPT-4o mini, o1, and more)
-  - Streaming and structured generation
-  - Tools and JSON schema-style output
-  
-- **[gemini/](./gemini/)** - Google Gemini LLM integration with advanced features
-  - Multi-model support (Flash, Pro, Thinking)
-  - Streaming and structured generation
-  - Rate limiting and complexity scoring
-  - Tier-based model selection
-  
-- **[ollama/](./ollama/)** - Local LLM integration via Ollama
-  - Run models locally
-  - Full control over model selection
-  - Privacy-first inference
+* **[openai/](./openai/)** - OpenAI LLM integration with GPT-4o and compatible models
+  * Multi-model support (GPT-4o, GPT-4o mini, o1, and more)
+  * Streaming and structured generation
+  * Tools and JSON schema-style output
+
+* **[gemini/](./gemini/)** - Google Gemini LLM integration with advanced features
+  * Multi-model support (Flash, Pro, Thinking)
+  * Streaming and structured generation
+  * Rate limiting and complexity scoring
+  * Tier-based model selection
+
+* **[ollama/](./ollama/)** - Local LLM integration via Ollama
+  * Run models locally
+  * Full control over model selection
+  * Privacy-first inference
 
 ### Memory & Storage
 
-- **[memory/](./memory/)** - High-performance memory operations
-  - Vector similarity search (powered by sqlite-vec)
-  - Graph database with Cypher queries (powered by sqlite-graph)
-  - Embedding generation
-  - Persistent key-value storage
-  - Everything in a single SQLite file
+* **[memory/](./memory/)** - High-performance memory operations
+  * Vector similarity search (powered by sqlite-vec)
+  * Graph database with Cypher queries (powered by sqlite-graph)
+  * Embedding generation
+  * Persistent key-value storage
+  * Everything in a single SQLite file
 
 ### I/O & Utilities
 
-- **[stdin/](./stdin/)** - Standard input/output for console agents
-- **[env/](./env/)** - Environment variable and configuration loading
-- **[prompt/](./prompt/)** - Prompt management and snapshot utilities
-- **[bubbletea/](./bubbletea/)** - Interactive terminal UIs using Bubble Tea, emitting AgentML events
-- **[mcp/](./mcp/)** - Model Context Protocol client for connecting to MCP servers, tools, and resources
-- **[validate/](./validate/)** - AgentML content validation namespace for AML/SCXML diagnostics
+* **[stdin/](./stdin/)** - Standard input/output for console agents
+* **[env/](./env/)** - Environment variable and configuration loading
+* **[prompt/](./prompt/)** - Prompt management and snapshot utilities
+* **[bubbletea/](./bubbletea/)** - Interactive terminal UIs using Bubble Tea, emitting AgentML events
+* **[slack/](./slack/)** - Send messages to Slack channels/users and receive Slack events as AgentML events
+* **[mcp/](./mcp/)** - Model Context Protocol client for connecting to MCP servers, tools, and resources
+* **[validate/](./validate/)** - AgentML content validation namespace for AML/SCXML diagnostics
 
 ## 🚀 Installation
 
@@ -67,6 +69,9 @@ go get github.com/agentflare-ai/agentml-go/memory
 
 # Bubble Tea namespace
 go get github.com/agentflare-ai/agentml-go/bubbletea
+
+# Slack namespace
+go get github.com/agentflare-ai/agentml-go/slack
 
 # MCP namespace
 go get github.com/agentflare-ai/agentml-go/mcp
@@ -163,9 +168,9 @@ namespace/
 
 ### Prerequisites
 
-- Go 1.24.5+
-- Make (optional)
-- Git with submodules support
+* Go 1.24.5+
+* Make (optional)
+* Git with submodules support
 
 ### Setup
 
@@ -230,6 +235,7 @@ See existing namespaces (openai, gemini, ollama, memory, bubbletea, mcp, validat
 We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 **Quick Start:**
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
@@ -238,27 +244,28 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for gu
 
 ## 📚 Documentation
 
-- **[AgentML Specification](https://github.com/agentflare-ai/agentml)** - Core AgentML language spec
-- **[agentmlx Runtime](https://github.com/agentflare-ai/agentmlx)** - Reference runtime implementation
-- **[Enhancement Proposals (AEPs)](./aeps/)** - Propose major changes for agentml-go
-- **[General AEPs](https://github.com/agentflare-ai/agentml/tree/main/aeps)** - Cross-project proposals
+* **[AgentML Specification](https://github.com/agentflare-ai/agentml)** - Core AgentML language spec
+* **[agentmlx Runtime](https://github.com/agentflare-ai/agentmlx)** - Reference runtime implementation
+* **[Enhancement Proposals (AEPs)](./aeps/)** - Propose major changes for agentml-go
+* **[General AEPs](https://github.com/agentflare-ai/agentml/tree/main/aeps)** - Cross-project proposals
 
 ### Package-Specific Docs
 
-- [OpenAI Namespace](./openai/README.md)
-- [Gemini Namespace](./gemini/README.md)
-- [Ollama Namespace](./ollama/README.md)
-- [Memory Namespace](./memory/README.md)
-- [Bubble Tea Namespace](./bubbletea/README.md)
-- [MCP Namespace](./mcp/README.md)
+* [OpenAI Namespace](./openai/README.md)
+* [Gemini Namespace](./gemini/README.md)
+* [Ollama Namespace](./ollama/README.md)
+* [Memory Namespace](./memory/README.md)
+* [Bubble Tea Namespace](./bubbletea/README.md)
+* [Slack Namespace](./slack/README.md)
+* [MCP Namespace](./mcp/README.md)
 
 ## 🔖 Versioning
 
 This project follows [Semantic Versioning](https://semver.org/):
 
-- **Major**: Breaking API changes
-- **Minor**: New features, backward compatible
-- **Patch**: Bug fixes, backward compatible
+* **Major**: Breaking API changes
+* **Minor**: New features, backward compatible
+* **Patch**: Bug fixes, backward compatible
 
 Releases are managed via [GitHub Releases](https://github.com/agentflare-ai/agentml-go/releases).
 
@@ -270,18 +277,17 @@ Copyright (c) 2025 AgentFlare AI
 
 ## 🔗 Related Projects
 
-- **[agentml](https://github.com/agentflare-ai/agentml)** - AgentML language specification
-- **[agentmlx](https://github.com/agentflare-ai/agentmlx)** - Reference runtime (Go/WASM)
-- **[sqlite-graph](https://github.com/agentflare-ai/sqlite-graph)** - Graph database extension for SQLite
-- **[sqlite-vec](https://github.com/asg017/sqlite-vec)** - Vector search extension for SQLite
+* **[agentml](https://github.com/agentflare-ai/agentml)** - AgentML language specification
+* **[agentmlx](https://github.com/agentflare-ai/agentmlx)** - Reference runtime (Go/WASM)
+* **[sqlite-graph](https://github.com/agentflare-ai/sqlite-graph)** - Graph database extension for SQLite
+* **[sqlite-vec](https://github.com/asg017/sqlite-vec)** - Vector search extension for SQLite
 
 ## 🆘 Support
 
-- **Issues**: [Report bugs](https://github.com/agentflare-ai/agentml-go/issues)
-- **Discussions**: [Ask questions](https://github.com/agentflare-ai/agentml/discussions)
-- **Spec Issues**: [AgentML spec feedback](https://github.com/agentflare-ai/agentml/issues)
+* **Issues**: [Report bugs](https://github.com/agentflare-ai/agentml-go/issues)
+* **Discussions**: [Ask questions](https://github.com/agentflare-ai/agentml/discussions)
+* **Spec Issues**: [AgentML spec feedback](https://github.com/agentflare-ai/agentml/issues)
 
----
+***
 
 **Building the universal language for AI agents, one namespace at a time.** ✨
-

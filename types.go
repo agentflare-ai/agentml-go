@@ -476,35 +476,6 @@ type Trace struct {
 	Hints     []string   `json:"hints,omitempty"`
 }
 
-// Severity represents the severity level of a diagnostic
-type Severity string
-
-const (
-	SeverityError   Severity = "error"
-	SeverityWarning Severity = "warning"
-	SeverityInfo    Severity = "info"
-)
-
-// Related points to a related location in the source (e.g., reference target)
-// that can help explain or remedy an error.
-type Related struct {
-	Label    string   `json:"label"`
-	Position Position `json:"position"`
-}
-
-// Diagnostic describes a validation issue found in the document
-// It is designed to be useful to both humans and LLMs.
-type Diagnostic struct {
-	Severity  Severity  `json:"severity"`
-	Code      string    `json:"code"`
-	Message   string    `json:"message"`
-	Position  Position  `json:"position"`
-	Tag       string    `json:"tag"`
-	Attribute string    `json:"attribute,omitempty"`
-	SpecRef   string    `json:"spec_ref,omitempty"`
-	Hints     []string  `json:"hints,omitempty"`
-	Related   []Related `json:"related,omitempty"`
-}
 
 // Option for adding extra context to diagnostics
 

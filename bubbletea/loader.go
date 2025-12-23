@@ -16,7 +16,11 @@ type Deps struct {
 }
 
 // Loader returns a NamespaceLoader that initializes the Bubble Tea namespace.
-func Loader(deps *Deps) agentml.NamespaceLoader {
+func Loader(maybeDeps ...Deps) agentml.NamespaceLoader {
+	var deps *Deps
+	if len(maybeDeps) > 0 {
+		deps = &maybeDeps[0]
+	}
 	return func(ctx context.Context, itp agentml.Interpreter, doc xmldom.Document) (agentml.Namespace, error) {
 		actual := deps
 		if actual == nil {

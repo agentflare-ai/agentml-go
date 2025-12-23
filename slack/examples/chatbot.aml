@@ -1,0 +1,79 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
+    datamodel="ecmascript"
+    xmlns:slack="github.com/agentflare-ai/agentml-go/slack"
+    xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
+
+    <datamodel>
+        <data id="channel" expr="null" />
+        <data id="user" expr="null" />
+        <data id="userMessage" expr="''" />
+        <data id="conversationHistory" expr="[]" />
+        <data id="aiResponse" expr="''" />
+    </datamodel>
+
+    <state id="listening">
+        <transition event="slack.message.posted" target="process_message">
+            <!-- Store message context -->
+            <assign location="channel" expr="_event.data.channel" />
+            <assign location="user" expr="_event.data.user" />
+            <assign location="userMessage" expr="_event.data.text" />
+
+            <!-- Add to conversation history -->
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{role: 'user', content: userMessage}])" />
+        </transition>
+    </state>
+
+    <state id="process_message">
+        <onentry>
+            <!-- Generate AI response using OpenAI -->
+            <openai:generate model="gpt-4o-mini" location="aiResponse">
+                <openai:prompt>
+                    You are a helpful Slack bot assistant. Respond naturally and concisely to user
+                    messages.
+
+                    Conversation history:
+                    {{range .conversationHistory}}
+                    {{.role}}: {{.content}}
+                    {{end}}
+
+                    User message: {{.userMessage}}
+
+                    Provide a helpful response:
+                </openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <!-- After onentry completes, aiResponse will be populated -->
+        <transition event="*" target="send_response" />
+    </state>
+
+    <state id="send_response">
+        <onentry>
+            <!-- Send AI response back to Slack -->
+            <slack:send channel-expr="channel"
+                text-expr="aiResponse"
+                event="slack.response.sent" />
+
+            <!-- Add AI response to conversation history -->
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{role: 'assistant', content: aiResponse}])" />
+        </onentry>
+
+        <transition event="slack.response.sent" target="listening" />
+        <transition event="error.communication" target="error_handling" />
+    </state>
+
+    <state id="error_handling">
+        <onentry>
+            <!-- Send error message to user -->
+            <slack:send channel-expr="channel"
+                text-expr="'Sorry, I encountered an error. Please try again.'"
+                event="slack.error.sent" />
+        </onentry>
+
+        <transition event="slack.error.sent" target="listening" />
+    </state>
+
+</agentml>
