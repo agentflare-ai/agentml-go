@@ -21,9 +21,19 @@
                 selectedLabels, reason}.</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:sequence>
+            <xs:choice>
                 <xs:element ref="bubbletea:list" minOccurs="1" maxOccurs="1" />
-            </xs:sequence>
+                <xs:element ref="bubbletea:textinput" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:textarea" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:table" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:progress" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:paginator" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:viewport" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:spinner" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:filepicker" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:timer" minOccurs="1" maxOccurs="1" />
+                <xs:element ref="bubbletea:stopwatch" minOccurs="1" maxOccurs="1" />
+            </xs:choice>
             <xs:attribute name="id" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>Optional program identifier included in emitted events. When
@@ -88,6 +98,186 @@
                     </xs:attribute>
                 </xs:extension>
             </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="textinput">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="id" type="xs:string" />
+                    <xs:attribute name="placeholder" type="xs:string" />
+                    <xs:attribute name="prompt" type="xs:string" />
+                    <xs:attribute name="value" type="xs:string" />
+                    <xs:attribute name="width" type="xs:int" />
+                    <xs:attribute name="char-limit" type="xs:int" />
+                    <xs:attribute name="echo-mode" type="xs:string" />
+                    <xs:attribute name="focused" type="xs:boolean" />
+                    <xs:attribute name="suggestions" type="xs:string" />
+                    <xs:attribute name="cursor-event" type="xs:string" />
+                    <xs:attribute name="change-event" type="xs:string" />
+                    <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+                    <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="textarea">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="id" type="xs:string" />
+                    <xs:attribute name="placeholder" type="xs:string" />
+                    <xs:attribute name="prompt" type="xs:string" />
+                    <xs:attribute name="value" type="xs:string" />
+                    <xs:attribute name="width" type="xs:int" />
+                    <xs:attribute name="height" type="xs:int" />
+                    <xs:attribute name="show-line-numbers" type="xs:boolean" />
+                    <xs:attribute name="focused" type="xs:boolean" />
+                    <xs:attribute name="cursor-event" type="xs:string" />
+                    <xs:attribute name="change-event" type="xs:string" />
+                    <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+                    <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="table">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="columns" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="column" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="title" type="xs:string" use="required" />
+                                    <xs:attribute name="width" type="xs:int" />
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="rows" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="row" minOccurs="1" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="cell" minOccurs="0" maxOccurs="unbounded" type="xs:string" />
+                                    </xs:sequence>
+                                    <xs:attribute name="separator" type="xs:string" />
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="width" type="xs:int" />
+            <xs:attribute name="height" type="xs:int" />
+            <xs:attribute name="focused" type="xs:boolean" />
+            <xs:attribute name="cursor-event" type="xs:string" />
+            <xs:attribute name="change-event" type="xs:string" />
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="progress">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="percent" type="xs:double" />
+            <xs:attribute name="width" type="xs:int" />
+            <xs:attribute name="change-event" type="xs:string" />
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="paginator">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="type" type="xs:string" />
+            <xs:attribute name="per-page" type="xs:int" />
+            <xs:attribute name="total-pages" type="xs:int" />
+            <xs:attribute name="cursor-event" type="xs:string" />
+            <xs:attribute name="change-event" type="xs:string" />
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="viewport">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="id" type="xs:string" />
+                    <xs:attribute name="width" type="xs:int" />
+                    <xs:attribute name="height" type="xs:int" />
+                    <xs:attribute name="x-offset" type="xs:int" />
+                    <xs:attribute name="y-offset" type="xs:int" />
+                    <xs:attribute name="content" type="xs:string" />
+                    <xs:attribute name="cursor-event" type="xs:string" />
+                    <xs:attribute name="change-event" type="xs:string" />
+                    <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+                    <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="spinner">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="spinner" type="xs:string" />
+            <xs:attribute name="start" type="xs:boolean" default="true" />
+            <xs:attribute name="change-event" type="xs:string" />
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="filepicker">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="height" type="xs:int" />
+            <xs:attribute name="current-directory" type="xs:string" />
+            <xs:attribute name="allowed-types" type="xs:string" />
+            <xs:attribute name="show-hidden" type="xs:boolean" />
+            <xs:attribute name="show-size" type="xs:boolean" />
+            <xs:attribute name="show-permissions" type="xs:boolean" />
+            <xs:attribute name="dir-allowed" type="xs:boolean" default="true" />
+            <xs:attribute name="file-allowed" type="xs:boolean" default="true" />
+            <xs:attribute name="auto-height" type="xs:boolean" />
+            <xs:attribute name="cursor" type="xs:string" />
+            <xs:attribute name="change-event" type="xs:string" />
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="timer">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="timeout" type="xs:string" />
+            <xs:attribute name="interval" type="xs:string" />
+            <xs:attribute name="autostart" type="xs:boolean" default="true" />
+            <xs:attribute name="change-event" type="xs:string" />
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="stopwatch">
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="interval" type="xs:string" />
+            <xs:attribute name="autostart" type="xs:boolean" default="true" />
+            <xs:attribute name="change-event" type="xs:string" />
+            <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
+            <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
         </xs:complexType>
     </xs:element>
 

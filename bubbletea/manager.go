@@ -2,6 +2,7 @@ package bubbletea
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
@@ -33,15 +34,22 @@ func NewManager() *Manager {
 
 // Start launches a Bubble Tea program asynchronously.
 func (m *Manager) Start(ctx context.Context, cfg ProgramConfig, itp agentml.Interpreter) (string, error) {
+	if cfg.component == nil {
+		return "", fmt.Errorf("bubbletea: program has no component configured")
+	}
+
 	ctx, span := tracer.Start(ctx, "bubbletea.manager.start",
 		trace.WithAttributes(
-			attribute.String("bubbletea.program.id", cfg.ProgramID),
-			attribute.Int("bubbletea.list.items", len(cfg.List.Items)),
+			append([]attribute.KeyValue{
+				attribute.String("bubbletea.program.id", cfg.ProgramID),
+				attribute.String("bubbletea.component.type", cfg.component.componentType()),
+			}, cfg.component.spanAttributes()...)...,
 		))
 	defer span.End()
 
 	modelCtx, cancel := context.WithCancel(ctx)
-	model := newListModel(modelCtx, cfg, itp)
+	adapter := cfg.component.newAdapter(cfg.ProgramID)
+	model := newBaseModel(modelCtx, cfg.ProgramID, adapter, cfg.component.events(), itp)
 	options := []tea.ProgramOption{tea.WithContext(modelCtx)}
 	if !isTTY() {
 		options = append(options, tea.WithoutRenderer())

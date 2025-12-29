@@ -1,6 +1,6 @@
 # Bubble Tea Namespace for AgentML
 
-The Bubble Tea namespace lets AgentML documents define interactive terminal UIs directly inside executable content. Use declarative XML to describe menus/lists and receive user interaction as standard AgentML events that can drive SCXML transitions.
+The Bubble Tea namespace lets AgentML documents define interactive terminal UIs directly inside executable content. Use declarative XML to describe Bubble Tea components (lists, inputs, tables, etc.) and receive user interaction as standard AgentML events that can drive SCXML transitions.
 
 ## Installation
 
@@ -21,7 +21,7 @@ itp := interpreter.New(ctx, doc, config)
 
 ## AgentML Usage
 
-Declare the namespace and add a `<bubbletea:program>` inside any executable content (e.g., `onentry`):
+Declare the namespace and add a `<bubbletea:program>` inside any executable content (e.g., `onentry`). Each program contains exactly one Bubble Tea component element (for example, `bubbletea:list` or `bubbletea:textinput`):
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
@@ -57,6 +57,28 @@ Declare the namespace and add a `<bubbletea:program>` inside any executable cont
   <final id="done" />
 </agentml>
 ```
+
+## Supported Components
+
+Each component maps to a Bubbles component from the Charmbracelet ecosystem. The element name matches
+the component name (no generic wrapper).
+
+Currently supported:
+
+* `bubbletea:list`
+* `bubbletea:textinput`
+* `bubbletea:textarea`
+* `bubbletea:table`
+* `bubbletea:progress`
+* `bubbletea:paginator`
+* `bubbletea:viewport`
+* `bubbletea:spinner`
+* `bubbletea:filepicker`
+* `bubbletea:timer`
+* `bubbletea:stopwatch`
+
+Component payloads always include `{component, programId, componentId, reason}` plus component-
+specific fields (e.g., `value`, `cursorIndex`, `row`, `percent`).
 
 ### Event Payloads
 

@@ -1,0 +1,214 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    version="1.0"
+    datamodel="ecmascript"
+    xmlns:bubbletea="github.com/agentflare-ai/agentml-go/bubbletea">
+
+    <datamodel>
+        <data id="last" expr="null" />
+    </datamodel>
+
+    <state id="list">
+        <onentry>
+            <bubbletea:program id="demo-list">
+                <bubbletea:list title="Kitchen Sink: list"
+                    multi="true"
+                    cursor-event="ui.change"
+                    change-event="ui.change"
+                    submit-event="ui.next"
+                    quit-event="ui.next">
+                    <bubbletea:item value="coffee">Coffee beans</bubbletea:item>
+                    <bubbletea:item value="tea">Loose leaf tea</bubbletea:item>
+                    <bubbletea:item value="milk">Oat milk</bubbletea:item>
+                    <bubbletea:item value="snacks">Snacks</bubbletea:item>
+                </bubbletea:list>
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="textinput" />
+    </state>
+
+    <state id="textinput">
+        <onentry>
+            <bubbletea:program id="demo-textinput">
+                <bubbletea:textinput placeholder="Type something..." prompt="> "
+                    value=""
+                    focused="true"
+                    change-event="ui.change"
+                    submit-event="ui.next"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="textarea" />
+    </state>
+
+    <state id="textarea">
+        <onentry>
+            <bubbletea:program id="demo-textarea">
+                <bubbletea:textarea placeholder="Write a few lines..."
+                    width="40"
+                    height="6"
+                    show-line-numbers="true"
+                    focused="true"
+                    change-event="ui.change"
+                    submit-event="ui.next"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="table" />
+    </state>
+
+    <state id="table">
+        <onentry>
+            <bubbletea:program id="demo-table">
+                <bubbletea:table height="6"
+                    focused="true"
+                    cursor-event="ui.change"
+                    change-event="ui.change"
+                    submit-event="ui.next"
+                    quit-event="ui.next">
+                    <columns>
+                        <column title="Name" width="12" />
+                        <column title="Qty" width="5" />
+                        <column title="Notes" width="18" />
+                    </columns>
+                    <rows>
+                        <row><cell>Apples</cell><cell>4</cell><cell>Honeycrisp</cell></row>
+                        <row><cell>Tea</cell><cell>2</cell><cell>Oolong</cell></row>
+                        <row><cell>Coffee</cell><cell>1</cell><cell>Medium roast</cell></row>
+                    </rows>
+                </bubbletea:table>
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="progress" />
+    </state>
+
+    <state id="progress">
+        <onentry>
+            <bubbletea:program id="demo-progress">
+                <bubbletea:progress percent="0.42" width="30"
+                    change-event="ui.change"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="paginator" />
+    </state>
+
+    <state id="paginator">
+        <onentry>
+            <bubbletea:program id="demo-paginator">
+                <bubbletea:paginator type="dots" total-pages="8" per-page="1"
+                    cursor-event="ui.change"
+                    change-event="ui.change"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="viewport" />
+    </state>
+
+    <state id="viewport">
+        <onentry>
+            <bubbletea:program id="demo-viewport">
+                <bubbletea:viewport width="40" height="6"
+                    cursor-event="ui.change"
+                    change-event="ui.change"
+                    quit-event="ui.next">
+This is a long block of text for the viewport.
+Scroll with arrow keys or page keys, then press q to continue.
+Line 3: The quick brown fox jumps over the lazy dog.
+Line 4: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Line 5: Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Line 6: Ut enim ad minim veniam, quis nostrud exercitation ullamco.
+Line 7: Duis aute irure dolor in reprehenderit in voluptate velit esse.
+Line 8: Excepteur sint occaecat cupidatat non proident.
+                </bubbletea:viewport>
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="spinner" />
+    </state>
+
+    <state id="spinner">
+        <onentry>
+            <bubbletea:program id="demo-spinner">
+                <bubbletea:spinner spinner="dots"
+                    change-event="ui.change"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="filepicker" />
+    </state>
+
+    <state id="filepicker">
+        <onentry>
+            <bubbletea:program id="demo-filepicker">
+                <bubbletea:filepicker height="8"
+                    current-directory="."
+                    allowed-types=".go,.md"
+                    show-hidden="false"
+                    show-size="true"
+                    show-permissions="true"
+                    submit-event="ui.next"
+                    change-event="ui.change"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="timer" />
+    </state>
+
+    <state id="timer">
+        <onentry>
+            <bubbletea:program id="demo-timer">
+                <bubbletea:timer timeout="3s" interval="200ms"
+                    submit-event="ui.next"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.next" target="stopwatch" />
+    </state>
+
+    <state id="stopwatch">
+        <onentry>
+            <bubbletea:program id="demo-stopwatch">
+                <bubbletea:stopwatch interval="200ms"
+                    change-event="ui.change"
+                    quit-event="ui.next" />
+            </bubbletea:program>
+        </onentry>
+        <transition event="ui.change">
+            <assign location="last" expr="_event.data" />
+        </transition>
+        <transition event="ui.next" target="done" />
+    </state>
+
+    <final id="done">
+        <onentry>
+            <log label="bubbletea.last_event" expr="last" />
+        </onentry>
+    </final>
+
+</agentml>

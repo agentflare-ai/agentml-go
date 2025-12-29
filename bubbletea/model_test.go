@@ -8,22 +8,20 @@ import (
 )
 
 func TestListModelEmitsEvents(t *testing.T) {
-	cfg := ProgramConfig{
-		ProgramID: "p",
-		List: listConfig{
-			ID:          "choices",
-			ChangeEvent: "ui.change",
-			SubmitEvent: "ui.submit",
-			QuitEvent:   "ui.quit",
-			Items: []listItemConfig{
-				{Label: "One"},
-				{Label: "Two"},
-			},
+	listCfg := listConfig{
+		ID:          "choices",
+		ChangeEvent: "ui.change",
+		SubmitEvent: "ui.submit",
+		QuitEvent:   "ui.quit",
+		Items: []listItemConfig{
+			{Label: "One"},
+			{Label: "Two"},
 		},
 	}
 
 	dispatcher := newFakeDispatcher()
-	model := newListModel(context.Background(), cfg, dispatcher)
+	adapter := newListAdapter("p", listCfg)
+	model := newBaseModel(context.Background(), "p", adapter, listCfg.events(), dispatcher)
 
 	// Toggle selection should trigger change event.
 	model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
