@@ -571,7 +571,7 @@ func (m *textInputAdapter) Update(msg tea.Msg) (tea.Cmd, updateFlags) {
 	if m.model.Position() != prevCursor {
 		flags |= flagCursor
 	}
-	if key, ok := msg.(tea.KeyMsg); ok && key.String() == "enter" {
+	if isEnterKey(msg) {
 		flags |= flagSubmitted
 	}
 	return cmd, flags
@@ -700,7 +700,7 @@ func (m *textAreaAdapter) Update(msg tea.Msg) (tea.Cmd, updateFlags) {
 	if m.model.LineInfo() != prevCursor {
 		flags |= flagCursor
 	}
-	if key, ok := msg.(tea.KeyMsg); ok && key.String() == "enter" {
+	if isEnterKey(msg) {
 		flags |= flagSubmitted
 	}
 	return cmd, flags
@@ -953,7 +953,7 @@ func (m *tableAdapter) Update(msg tea.Msg) (tea.Cmd, updateFlags) {
 	if m.model.Cursor() != prev {
 		flags |= flagCursor | flagChanged
 	}
-	if key, ok := msg.(tea.KeyMsg); ok && key.String() == "enter" {
+	if isEnterKey(msg) {
 		flags |= flagSubmitted
 	}
 	return cmd, flags

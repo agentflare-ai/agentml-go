@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/agentflare-ai/agentml-go"
@@ -83,6 +84,12 @@ func (m *Manager) Start(ctx context.Context, cfg ProgramConfig, itp agentml.Inte
 }
 
 func isTTY() bool {
-	fd := int(os.Stdout.Fd())
-	return term.IsTerminal(fd)
+	if force := strings.TrimSpace(os.Getenv("BUBBLETEA_FORCE_RENDER")); force != "" {
+		switch strings.ToLower(force) {
+		case "0", "false", "no":
+		default:
+			return true
+		}
+	}
+	return term.IsTerminal(int(os.Stdin.Fd())) || term.IsTerminal(int(os.Stdout.Fd()))
 }

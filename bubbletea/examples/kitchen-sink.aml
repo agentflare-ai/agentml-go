@@ -74,16 +74,16 @@
                     change-event="ui.change"
                     submit-event="ui.next"
                     quit-event="ui.next">
-                    <columns>
-                        <column title="Name" width="12" />
-                        <column title="Qty" width="5" />
-                        <column title="Notes" width="18" />
-                    </columns>
-                    <rows>
-                        <row><cell>Apples</cell><cell>4</cell><cell>Honeycrisp</cell></row>
-                        <row><cell>Tea</cell><cell>2</cell><cell>Oolong</cell></row>
-                        <row><cell>Coffee</cell><cell>1</cell><cell>Medium roast</cell></row>
-                    </rows>
+                    <bubbletea:columns>
+                        <bubbletea:column title="Name" width="12" />
+                        <bubbletea:column title="Qty" width="5" />
+                        <bubbletea:column title="Notes" width="18" />
+                    </bubbletea:columns>
+                    <bubbletea:rows>
+                        <bubbletea:row><bubbletea:cell>Apples</bubbletea:cell><bubbletea:cell>4</bubbletea:cell><bubbletea:cell>Honeycrisp</bubbletea:cell></bubbletea:row>
+                        <bubbletea:row><bubbletea:cell>Tea</bubbletea:cell><bubbletea:cell>2</bubbletea:cell><bubbletea:cell>Oolong</bubbletea:cell></bubbletea:row>
+                        <bubbletea:row><bubbletea:cell>Coffee</bubbletea:cell><bubbletea:cell>1</bubbletea:cell><bubbletea:cell>Medium roast</bubbletea:cell></bubbletea:row>
+                    </bubbletea:rows>
                 </bubbletea:table>
             </bubbletea:program>
         </onentry>

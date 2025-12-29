@@ -53,7 +53,7 @@ func (m *listAdapter) Update(msg tea.Msg) (tea.Cmd, updateFlags) {
 			if m.toggleSelection() {
 				flags |= flagChanged
 			}
-		case "enter":
+		case "enter", "ctrl+m":
 			m.ensureSelection()
 			flags |= flagSubmitted
 		}
