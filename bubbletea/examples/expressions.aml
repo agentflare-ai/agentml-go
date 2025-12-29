@@ -1,0 +1,40 @@
+<agentml xmlns="github.com/agentflare-ai/agentml"
+         xmlns:bubbletea="github.com/agentflare-ai/agentml-go/bubbletea"
+         datamodel="ecmascript">
+  <datamodel>
+    <data id="items" expr="[{label:'Alpha', value:'A'}, {label:'Beta', value:'B'}, {label:'Gamma', value:'C'}]" />
+    <data id="prompt" expr="'Why did you pick it? '" />
+    <data id="selection" expr="null" />
+    <data id="note" expr="''" />
+  </datamodel>
+
+  <state id="pick">
+    <onentry>
+      <bubbletea:program id="expr-list">
+        <bubbletea:list titleexpr="'Pick an option (expr)'" submit-event="ui.next">
+          <bubbletea:item labelexpr="items[0].label" valueexpr="items[0].value" />
+          <bubbletea:item labelexpr="items[1].label" valueexpr="items[1].value" />
+          <bubbletea:item labelexpr="items[2].label" valueexpr="items[2].value" />
+        </bubbletea:list>
+      </bubbletea:program>
+    </onentry>
+
+    <transition event="ui.next" target="note">
+      <assign location="selection" expr="_event.data" />
+    </transition>
+  </state>
+
+  <state id="note">
+    <onentry>
+      <bubbletea:program id="expr-input">
+        <bubbletea:textinput promptexpr="prompt" valueexpr="'Because...'" submit-event="ui.done" />
+      </bubbletea:program>
+    </onentry>
+
+    <transition event="ui.done" target="done">
+      <assign location="note" expr="_event.data.value" />
+    </transition>
+  </state>
+
+  <final id="done" />
+</agentml>
