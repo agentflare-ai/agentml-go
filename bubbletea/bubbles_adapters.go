@@ -1,6 +1,7 @@
 package bubbletea
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -22,8 +23,14 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func bindComponentConfig(el xmldom.Element, displayName string, cfg any) error {
-	if err := bindAttributes(el, cfg); err != nil {
+func bindComponentConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter, cfg any) error {
+	eval := func(ctx context.Context, expr string) (any, error) {
+		if itp == nil || itp.DataModel() == nil {
+			return nil, errNoDataModel
+		}
+		return itp.DataModel().EvaluateValue(ctx, expr)
+	}
+	if err := bindAttributesWithEval(ctx, el, cfg, eval); err != nil {
 		data := map[string]any{
 			"element": displayName,
 		}
@@ -61,9 +68,9 @@ type spinnerConfig struct {
 	QuitEvent   string `attr:"quit-event"`
 }
 
-func parseSpinnerConfig(el xmldom.Element, displayName string) (spinnerConfig, error) {
+func parseSpinnerConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (spinnerConfig, error) {
 	cfg := spinnerConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
 	return cfg, nil
@@ -155,9 +162,9 @@ type progressConfig struct {
 	QuitEvent   string  `attr:"quit-event"`
 }
 
-func parseProgressConfig(el xmldom.Element, displayName string) (progressConfig, error) {
+func parseProgressConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (progressConfig, error) {
 	cfg := progressConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
 	return cfg, nil
@@ -248,9 +255,9 @@ type paginatorConfig struct {
 	QuitEvent   string `attr:"quit-event"`
 }
 
-func parsePaginatorConfig(el xmldom.Element, displayName string) (paginatorConfig, error) {
+func parsePaginatorConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (paginatorConfig, error) {
 	cfg := paginatorConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
 	return cfg, nil
@@ -353,12 +360,12 @@ type viewportConfig struct {
 	QuitEvent   string `attr:"quit-event"`
 }
 
-func parseViewportConfig(el xmldom.Element, displayName string) (viewportConfig, error) {
+func parseViewportConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (viewportConfig, error) {
 	cfg := viewportConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
-	if cfg.Content == "" {
+	if cfg.Content == "" && !hasExprAttribute(el, "content") {
 		cfg.Content = strings.TrimSpace(string(el.TextContent()))
 	}
 	return cfg, nil
@@ -477,12 +484,12 @@ type textInputConfig struct {
 	QuitEvent   string   `attr:"quit-event"`
 }
 
-func parseTextInputConfig(el xmldom.Element, displayName string) (textInputConfig, error) {
+func parseTextInputConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (textInputConfig, error) {
 	cfg := textInputConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
-	if cfg.Value == "" {
+	if cfg.Value == "" && !hasExprAttribute(el, "value") {
 		cfg.Value = strings.TrimSpace(string(el.TextContent()))
 	}
 	return cfg, nil
@@ -612,12 +619,12 @@ type textAreaConfig struct {
 	QuitEvent       string `attr:"quit-event"`
 }
 
-func parseTextAreaConfig(el xmldom.Element, displayName string) (textAreaConfig, error) {
+func parseTextAreaConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (textAreaConfig, error) {
 	cfg := textAreaConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
-	if cfg.Value == "" {
+	if cfg.Value == "" && !hasExprAttribute(el, "value") {
 		cfg.Value = strings.TrimSpace(string(el.TextContent()))
 	}
 	return cfg, nil
@@ -751,13 +758,13 @@ type tableColumnConfig struct {
 	Width int    `attr:"width"`
 }
 
-func parseTableConfig(el xmldom.Element, displayName string) (tableConfig, error) {
+func parseTableConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (tableConfig, error) {
 	cfg := tableConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
 
-	columns, rows, err := parseTableChildren(el, displayName)
+	columns, rows, err := parseTableChildren(ctx, el, displayName, itp)
 	if err != nil {
 		return cfg, err
 	}
@@ -776,7 +783,7 @@ func parseTableConfig(el xmldom.Element, displayName string) (tableConfig, error
 	return cfg, nil
 }
 
-func parseTableChildren(el xmldom.Element, displayName string) ([]table.Column, []table.Row, error) {
+func parseTableChildren(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) ([]table.Column, []table.Row, error) {
 	var columns []table.Column
 	var rows []table.Row
 
@@ -788,13 +795,13 @@ func parseTableChildren(el xmldom.Element, displayName string) ([]table.Column, 
 		}
 		switch strings.ToLower(string(childEl.LocalName())) {
 		case "columns":
-			cols, err := parseTableColumns(childEl, displayName)
+			cols, err := parseTableColumns(ctx, childEl, displayName, itp)
 			if err != nil {
 				return nil, nil, err
 			}
 			columns = append(columns, cols...)
 		case "rows":
-			rs, err := parseTableRows(childEl)
+			rs, err := parseTableRows(ctx, childEl, displayName, itp)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -805,7 +812,7 @@ func parseTableChildren(el xmldom.Element, displayName string) ([]table.Column, 
 	return columns, rows, nil
 }
 
-func parseTableColumns(el xmldom.Element, displayName string) ([]table.Column, error) {
+func parseTableColumns(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) ([]table.Column, error) {
 	var columns []table.Column
 	children := el.ChildNodes()
 	for i := uint(0); i < children.Length(); i++ {
@@ -817,7 +824,7 @@ func parseTableColumns(el xmldom.Element, displayName string) ([]table.Column, e
 			continue
 		}
 		colCfg := tableColumnConfig{}
-		if err := bindComponentConfig(childEl, displayName, &colCfg); err != nil {
+		if err := bindComponentConfig(ctx, childEl, displayName, itp, &colCfg); err != nil {
 			return nil, err
 		}
 		if strings.TrimSpace(colCfg.Title) == "" {
@@ -837,7 +844,7 @@ func parseTableColumns(el xmldom.Element, displayName string) ([]table.Column, e
 	return columns, nil
 }
 
-func parseTableRows(el xmldom.Element) ([]table.Row, error) {
+func parseTableRows(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) ([]table.Row, error) {
 	var rows []table.Row
 	children := el.ChildNodes()
 	for i := uint(0); i < children.Length(); i++ {
@@ -848,7 +855,10 @@ func parseTableRows(el xmldom.Element) ([]table.Row, error) {
 		if !equalsLocalName(childEl, "row") {
 			continue
 		}
-		row := parseTableRow(childEl)
+		row, err := parseTableRow(ctx, childEl, displayName, itp)
+		if err != nil {
+			return nil, err
+		}
 		if len(row) == 0 {
 			continue
 		}
@@ -857,7 +867,7 @@ func parseTableRows(el xmldom.Element) ([]table.Row, error) {
 	return rows, nil
 }
 
-func parseTableRow(el xmldom.Element) table.Row {
+func parseTableRow(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (table.Row, error) {
 	cells := make([]string, 0)
 	children := el.ChildNodes()
 	for i := uint(0); i < children.Length(); i++ {
@@ -868,15 +878,33 @@ func parseTableRow(el xmldom.Element) table.Row {
 		if !equalsLocalName(childEl, "cell") {
 			continue
 		}
-		cell := strings.TrimSpace(string(childEl.TextContent()))
+		cell := ""
+		if expr := strings.TrimSpace(string(childEl.GetAttribute("expr"))); expr != "" {
+			val, err := evalExprString(ctx, itp, displayName, "expr", expr)
+			if err != nil {
+				return nil, err
+			}
+			cell = val
+		} else {
+			cell = strings.TrimSpace(string(childEl.TextContent()))
+		}
 		cells = append(cells, cell)
 	}
 	if len(cells) == 0 {
 		content := strings.TrimSpace(string(el.TextContent()))
 		if content == "" {
-			return nil
+			return nil, nil
 		}
 		sep := strings.TrimSpace(string(el.GetAttribute("separator")))
+		if sep == "" {
+			if exprAttr, expr := lookupExprAttribute(el, "separator"); exprAttr != "" {
+				val, err := evalExprString(ctx, itp, displayName, exprAttr, expr)
+				if err != nil {
+					return nil, err
+				}
+				sep = val
+			}
+		}
 		if sep == "" {
 			sep = "|"
 		}
@@ -888,7 +916,7 @@ func parseTableRow(el xmldom.Element) table.Row {
 			cells = append(cells, cell)
 		}
 	}
-	return table.Row(cells)
+	return table.Row(cells), nil
 }
 
 func (cfg tableConfig) componentType() string { return "table" }
@@ -998,9 +1026,9 @@ type filePickerConfig struct {
 	QuitEvent        string   `attr:"quit-event"`
 }
 
-func parseFilePickerConfig(el xmldom.Element, displayName string) (filePickerConfig, error) {
+func parseFilePickerConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (filePickerConfig, error) {
 	cfg := filePickerConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
 	return cfg, nil
@@ -1105,9 +1133,9 @@ type timerConfig struct {
 	QuitEvent   string        `attr:"quit-event"`
 }
 
-func parseTimerConfig(el xmldom.Element, displayName string) (timerConfig, error) {
+func parseTimerConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (timerConfig, error) {
 	cfg := timerConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
 	if cfg.Timeout <= 0 {
@@ -1202,9 +1230,9 @@ type stopwatchConfig struct {
 	QuitEvent   string        `attr:"quit-event"`
 }
 
-func parseStopwatchConfig(el xmldom.Element, displayName string) (stopwatchConfig, error) {
+func parseStopwatchConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (stopwatchConfig, error) {
 	cfg := stopwatchConfig{}
-	if err := bindComponentConfig(el, displayName, &cfg); err != nil {
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
 		return cfg, err
 	}
 	return cfg, nil
@@ -1281,34 +1309,34 @@ func (m *stopwatchAdapter) Payload(reason string) map[string]any {
 func (m *stopwatchAdapter) CursorPayload() (map[string]any, bool) { return nil, false }
 
 func init() {
-	registerComponent("spinner", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseSpinnerConfig(el, displayName)
+	registerComponent("spinner", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseSpinnerConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("progress", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseProgressConfig(el, displayName)
+	registerComponent("progress", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseProgressConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("paginator", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parsePaginatorConfig(el, displayName)
+	registerComponent("paginator", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parsePaginatorConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("viewport", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseViewportConfig(el, displayName)
+	registerComponent("viewport", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseViewportConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("textinput", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseTextInputConfig(el, displayName)
+	registerComponent("textinput", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseTextInputConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("textarea", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseTextAreaConfig(el, displayName)
+	registerComponent("textarea", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseTextAreaConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("table", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseTableConfig(el, displayName)
+	registerComponent("table", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseTableConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("filepicker", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseFilePickerConfig(el, displayName)
+	registerComponent("filepicker", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseFilePickerConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("timer", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseTimerConfig(el, displayName)
+	registerComponent("timer", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseTimerConfig(ctx, el, displayName, itp)
 	})
-	registerComponent("stopwatch", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseStopwatchConfig(el, displayName)
+	registerComponent("stopwatch", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseStopwatchConfig(ctx, el, displayName, itp)
 	})
 }

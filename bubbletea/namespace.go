@@ -29,7 +29,7 @@ func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error)
 
 	switch strings.ToLower(string(el.LocalName())) {
 	case "program":
-		exec, err := newProgramExecutable(el, n.manager)
+		exec, err := newProgramExecutable(ctx, el, n.manager, n.itp)
 		if err != nil {
 			return true, err
 		}

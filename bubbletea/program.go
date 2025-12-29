@@ -3,7 +3,6 @@ package bubbletea
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/agentflare-ai/agentml-go"
@@ -31,13 +30,13 @@ type ProgramConfig struct {
 }
 
 type listConfig struct {
-	ID          string
-	Title       string
-	Multi       bool
-	CursorEvent string
-	ChangeEvent string
-	SubmitEvent string
-	QuitEvent   string
+	ID          string `attr:"id"`
+	Title       string `attr:"title"`
+	Multi       bool   `attr:"multi"`
+	CursorEvent string `attr:"cursor-event"`
+	ChangeEvent string `attr:"change-event"`
+	SubmitEvent string `attr:"submit-event"`
+	QuitEvent   string `attr:"quit-event"`
 	Items       []listItemConfig
 }
 
@@ -46,8 +45,8 @@ type listItemConfig struct {
 	Value string
 }
 
-func newProgramExecutable(el xmldom.Element, mgr *Manager) (*programExecutable, error) {
-	cfg, err := parseProgramConfig(el)
+func newProgramExecutable(ctx context.Context, el xmldom.Element, mgr *Manager, itp agentml.Interpreter) (*programExecutable, error) {
+	cfg, err := parseProgramConfig(ctx, el, itp)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +77,7 @@ func (p *programExecutable) Execute(ctx context.Context, itp agentml.Interpreter
 	return nil
 }
 
-func parseProgramConfig(el xmldom.Element) (ProgramConfig, error) {
+func parseProgramConfig(ctx context.Context, el xmldom.Element, itp agentml.Interpreter) (ProgramConfig, error) {
 	cfg := ProgramConfig{
 		ProgramID: strings.TrimSpace(string(el.GetAttribute("id"))),
 	}
@@ -119,7 +118,7 @@ func parseProgramConfig(el xmldom.Element) (ProgramConfig, error) {
 		}
 	}
 
-	componentCfg, err := parser(componentEl, displayName)
+	componentCfg, err := parser(ctx, componentEl, displayName, itp)
 	if err != nil {
 		return cfg, err
 	}
@@ -133,14 +132,10 @@ func parseProgramConfig(el xmldom.Element) (ProgramConfig, error) {
 	return cfg, nil
 }
 
-func parseListConfig(el xmldom.Element, displayName string) (listConfig, error) {
-	cfg := listConfig{
-		ID:          strings.TrimSpace(string(el.GetAttribute("id"))),
-		Title:       strings.TrimSpace(string(el.GetAttribute("title"))),
-		CursorEvent: strings.TrimSpace(string(el.GetAttribute("cursor-event"))),
-		ChangeEvent: strings.TrimSpace(string(el.GetAttribute("change-event"))),
-		SubmitEvent: strings.TrimSpace(string(el.GetAttribute("submit-event"))),
-		QuitEvent:   strings.TrimSpace(string(el.GetAttribute("quit-event"))),
+func parseListConfig(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (listConfig, error) {
+	cfg := listConfig{}
+	if err := bindComponentConfig(ctx, el, displayName, itp, &cfg); err != nil {
+		return cfg, err
 	}
 
 	if cfg.SubmitEvent == "" {
@@ -148,22 +143,6 @@ func parseListConfig(el xmldom.Element, displayName string) (listConfig, error) 
 	}
 	if cfg.QuitEvent == "" {
 		cfg.QuitEvent = defaultQuitEvent
-	}
-
-	if multiAttr := strings.TrimSpace(string(el.GetAttribute("multi"))); multiAttr != "" {
-		parsed, err := strconv.ParseBool(multiAttr)
-		if err != nil {
-			return cfg, &agentml.PlatformError{
-				EventName: "error.execution",
-				Message:   fmt.Sprintf("%s multi attribute invalid: %v", displayName, err),
-				Data: map[string]any{
-					"element": displayName,
-					"value":   multiAttr,
-				},
-				Cause: err,
-			}
-		}
-		cfg.Multi = parsed
 	}
 
 	childNodes := el.ChildNodes()
@@ -175,13 +154,20 @@ func parseListConfig(el xmldom.Element, displayName string) (listConfig, error) 
 		if !equalsLocalName(childEl, "item") {
 			continue
 		}
-		item := strings.TrimSpace(string(childEl.TextContent()))
-		if item == "" {
+		itemLabel, err := resolveItemLabel(ctx, childEl, displayName, itp)
+		if err != nil {
+			return cfg, err
+		}
+		if itemLabel == "" {
 			continue
 		}
+		itemValue, err := resolveItemValue(ctx, childEl, displayName, itp)
+		if err != nil {
+			return cfg, err
+		}
 		cfg.Items = append(cfg.Items, listItemConfig{
-			Label: item,
-			Value: strings.TrimSpace(string(childEl.GetAttribute("value"))),
+			Label: itemLabel,
+			Value: itemValue,
 		})
 	}
 
@@ -243,7 +229,60 @@ func (cfg listConfig) events() componentEvents {
 }
 
 func init() {
-	registerComponent("list", func(el xmldom.Element, displayName string) (componentConfig, error) {
-		return parseListConfig(el, displayName)
+	registerComponent("list", func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error) {
+		return parseListConfig(ctx, el, displayName, itp)
 	})
+}
+
+func resolveItemLabel(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (string, error) {
+	if exprAttr, expr := lookupExprAttribute(el, "label"); exprAttr != "" {
+		return evalExprString(ctx, itp, displayName, exprAttr, expr)
+	}
+	if expr := strings.TrimSpace(string(el.GetAttribute("expr"))); expr != "" {
+		return evalExprString(ctx, itp, displayName, "expr", expr)
+	}
+	return strings.TrimSpace(string(el.TextContent())), nil
+}
+
+func resolveItemValue(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (string, error) {
+	if exprAttr, expr := lookupExprAttribute(el, "value"); exprAttr != "" {
+		return evalExprString(ctx, itp, displayName, exprAttr, expr)
+	}
+	value := strings.TrimSpace(string(el.GetAttribute("value")))
+	if value != "" {
+		return value, nil
+	}
+	label, err := resolveItemLabel(ctx, el, displayName, itp)
+	if err != nil {
+		return "", err
+	}
+	return label, nil
+}
+
+func evalExprString(ctx context.Context, itp agentml.Interpreter, displayName, attrName, expr string) (string, error) {
+	if itp == nil || itp.DataModel() == nil {
+		return "", newAttrEvalError(displayName, attrName, expr, errNoDataModel)
+	}
+	val, err := itp.DataModel().EvaluateValue(ctx, expr)
+	if err != nil {
+		return "", newAttrEvalError(displayName, attrName, expr, err)
+	}
+	if val == nil {
+		return "", nil
+	}
+	return fmt.Sprintf("%v", val), nil
+}
+
+func newAttrEvalError(displayName, attrName, expr string, err error) error {
+	attrErr := &attrError{Attr: attrName, Value: expr, Cause: err}
+	return &agentml.PlatformError{
+		EventName: "error.execution",
+		Message:   fmt.Sprintf("%s %v", displayName, attrErr),
+		Data: map[string]any{
+			"element":   displayName,
+			"attribute": attrName,
+			"value":     expr,
+		},
+		Cause: err,
+	}
 }

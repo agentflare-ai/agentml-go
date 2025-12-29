@@ -58,6 +58,10 @@ Declare the namespace and add a `<bubbletea:program>` inside any executable cont
 </agentml>
 ```
 
+### Expression Attributes
+
+All component attributes support expression variants using `{{attr}}expr` (or `{{attr}}-expr`) when a datamodel is available. For example, `valueexpr` or `value-expr` can be used in place of `value` to compute a value at runtime. Elements with text content (such as `bubbletea:item` or `bubbletea:cell`) also accept an `expr` attribute to compute their text.
+
 ## Supported Components
 
 Each component maps to a Bubbles component from the Charmbracelet ecosystem. The element name matches

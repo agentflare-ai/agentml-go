@@ -83,6 +83,7 @@
                     <xs:documentation>Event emitted when the user quits (q or ctrl+c).</xs:documentation>
                 </xs:annotation>
             </xs:attribute>
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 
@@ -96,6 +97,7 @@
                                 text when omitted.</xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
+                    <xs:anyAttribute processContents="lax" />
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>
@@ -118,6 +120,7 @@
                     <xs:attribute name="change-event" type="xs:string" />
                     <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
                     <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+                    <xs:anyAttribute processContents="lax" />
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>
@@ -139,6 +142,7 @@
                     <xs:attribute name="change-event" type="xs:string" />
                     <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
                     <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+                    <xs:anyAttribute processContents="lax" />
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>
@@ -154,9 +158,11 @@
                                 <xs:complexType>
                                     <xs:attribute name="title" type="xs:string" use="required" />
                                     <xs:attribute name="width" type="xs:int" />
+                                    <xs:anyAttribute processContents="lax" />
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
+                        <xs:anyAttribute processContents="lax" />
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="rows" minOccurs="0" maxOccurs="1">
@@ -165,12 +171,22 @@
                             <xs:element name="row" minOccurs="1" maxOccurs="unbounded">
                                 <xs:complexType>
                                     <xs:sequence>
-                                        <xs:element name="cell" minOccurs="0" maxOccurs="unbounded" type="xs:string" />
+                                        <xs:element name="cell" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:simpleContent>
+                                                    <xs:extension base="xs:string">
+                                                        <xs:anyAttribute processContents="lax" />
+                                                    </xs:extension>
+                                                </xs:simpleContent>
+                                            </xs:complexType>
+                                        </xs:element>
                                     </xs:sequence>
                                     <xs:attribute name="separator" type="xs:string" />
+                                    <xs:anyAttribute processContents="lax" />
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
+                        <xs:anyAttribute processContents="lax" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
@@ -182,6 +198,7 @@
             <xs:attribute name="change-event" type="xs:string" />
             <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
             <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 
@@ -193,6 +210,7 @@
             <xs:attribute name="change-event" type="xs:string" />
             <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
             <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 
@@ -206,6 +224,7 @@
             <xs:attribute name="change-event" type="xs:string" />
             <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
             <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 
@@ -223,6 +242,7 @@
                     <xs:attribute name="change-event" type="xs:string" />
                     <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
                     <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+                    <xs:anyAttribute processContents="lax" />
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>
@@ -236,6 +256,7 @@
             <xs:attribute name="change-event" type="xs:string" />
             <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
             <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 
@@ -255,6 +276,7 @@
             <xs:attribute name="change-event" type="xs:string" />
             <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
             <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 
@@ -267,6 +289,7 @@
             <xs:attribute name="change-event" type="xs:string" />
             <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
             <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 
@@ -278,6 +301,7 @@
             <xs:attribute name="change-event" type="xs:string" />
             <xs:attribute name="submit-event" type="xs:string" default="bubbletea.submit" />
             <xs:attribute name="quit-event" type="xs:string" default="bubbletea.quit" />
+            <xs:anyAttribute processContents="lax" />
         </xs:complexType>
     </xs:element>
 

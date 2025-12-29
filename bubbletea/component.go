@@ -1,11 +1,13 @@
 package bubbletea
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
 
+	"github.com/agentflare-ai/agentml-go"
 	"github.com/agentflare-ai/go-xmldom"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -18,7 +20,7 @@ type componentConfig interface {
 	events() componentEvents
 }
 
-type componentParser func(el xmldom.Element, displayName string) (componentConfig, error)
+type componentParser func(ctx context.Context, el xmldom.Element, displayName string, itp agentml.Interpreter) (componentConfig, error)
 
 var (
 	componentMu       sync.RWMutex
