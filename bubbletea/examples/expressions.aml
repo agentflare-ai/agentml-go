@@ -1,11 +1,12 @@
 <agentml xmlns="github.com/agentflare-ai/agentml"
          xmlns:bubbletea="github.com/agentflare-ai/agentml-go/bubbletea"
+         version="1.0"
          datamodel="ecmascript">
   <datamodel>
     <data id="items" expr="[{label:'Alpha', value:'A'}, {label:'Beta', value:'B'}, {label:'Gamma', value:'C'}]" />
     <data id="prompt" expr="'Why did you pick it? '" />
     <data id="selection" expr="null" />
-    <data id="note" expr="''" />
+    <data id="noteText" expr="''" />
   </datamodel>
 
   <state id="pick">
@@ -22,6 +23,7 @@
     <transition event="ui.next" target="note">
       <assign location="selection" expr="_event.data" />
     </transition>
+    <transition event="bubbletea.quit" target="done" />
   </state>
 
   <state id="note">
@@ -32,8 +34,9 @@
     </onentry>
 
     <transition event="ui.done" target="done">
-      <assign location="note" expr="_event.data.value" />
+      <assign location="noteText" expr="_event.data.value" />
     </transition>
+    <transition event="bubbletea.quit" target="done" />
   </state>
 
   <final id="done" />
